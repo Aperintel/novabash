@@ -1,6 +1,13 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 
+const tabs: Array<{ href: string; num: string; label: string }> = [
+  { href: '/', num: '01', label: 'overview' },
+  { href: '/stacks', num: '02', label: 'stacks' },
+  { href: '/pricing', num: '03', label: 'pricing' },
+  { href: '/dashboard', num: '04', label: 'dashboard' },
+];
+
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen">
@@ -10,30 +17,35 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             <Logo size={22} />
           </span>
           <span className="text-[18px] font-extrabold tracking-heading">NovaBash</span>
-          <span className="ml-1 border border-hairline-bright px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-caps text-fg-dim">
-            preview
+          <span className="ml-2 border border-hairline-bright px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-caps text-fg-dim">
+            v0.1 beta
           </span>
         </Link>
-        <nav className="flex justify-self-center gap-1 font-mono text-[12px]">
-          <Link
-            href="/"
-            className="px-3 py-2 text-fg-dim transition-colors duration-150 ease-nb hover:text-fg"
-          >
-            <span className="mr-2 text-fg-fade">01</span>overview
-          </Link>
-          <Link
-            href="/changelog"
-            className="px-3 py-2 text-fg-dim transition-colors duration-150 ease-nb hover:text-fg"
-          >
-            <span className="mr-2 text-fg-fade">02</span>changelog
-          </Link>
+        <nav className="flex justify-self-center gap-0">
+          {tabs.map((t) => (
+            <Link
+              key={t.href}
+              href={t.href}
+              className="relative flex items-center gap-2 px-3.5 py-2 font-mono text-[12px] text-fg-dim transition-colors duration-150 ease-nb hover:text-fg"
+            >
+              <span className="text-fg-fade">{t.num}</span>
+              {t.label}
+            </Link>
+          ))}
         </nav>
-        <div className="flex justify-end">
-          <Link
-            href="/sign-in"
-            className="border border-hairline-bright px-3 py-1.5 font-mono text-[11px] text-fg-mid transition-colors duration-150 ease-nb hover:border-gold hover:text-gold"
+        <div className="flex items-center justify-end gap-2.5">
+          <button
+            type="button"
+            className="flex items-center gap-2 border border-hairline-bright px-2.5 py-1.5 font-mono text-[11px] text-fg-mid transition-colors duration-150 ease-nb hover:border-gold hover:text-gold"
           >
-            sign in
+            <span className="font-mono">⌘</span>
+            <kbd className="border border-hairline-bright bg-bg-elev-2 px-1 text-[10px]">⌘K</kbd>
+          </button>
+          <Link
+            href="/dashboard"
+            className="bg-gold px-4 py-1.5 text-[12px] font-semibold text-bg transition-colors duration-150 ease-nb hover:bg-gold-bright"
+          >
+            launch app
           </Link>
         </div>
       </header>
@@ -48,7 +60,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           </div>
           <div className="flex items-center gap-5 font-mono text-[11px] text-fg-dim">
             <Link href="/changelog" className="hover:text-fg">
-              changelog
+              build log
             </Link>
             <Link href="/security" className="hover:text-fg">
               security
@@ -62,6 +74,13 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               rel="noopener noreferrer"
             >
               github
+            </a>
+            <a
+              href="https://x.com/novabash"
+              className="hover:text-fg"
+              rel="noopener noreferrer"
+            >
+              x
             </a>
           </div>
         </div>
