@@ -6,6 +6,7 @@ import { credentials, environments, auditLog } from '@novabash/db';
 import { authenticate, AuthError, type WorkspaceContext } from '../auth.js';
 import { sealCredential, openCredential, AuditAction } from '../crypto/index.js';
 import { appendAudit } from '../audit.js';
+import { calculateKeyHealth } from '../health/index.js';
 
 /**
  * Vault routes. All require a workspace-key Bearer token. Mutations seal
@@ -216,6 +217,54 @@ export async function vaultRoutes(app: FastifyInstance) {
       return reply.send({ id: row.id, rotated: true });
     },
   );
+
+  // GET /v1/vault/health
+  // Returns Key Health for every credential in the workspace, grouped by
+  // service. Plaintext is never decrypted here; health is graded purely on
+  // metadata.
+  app.get('/health', async (req, reply) => {
+    const ctx = (req as unknown as { workspaceCtx: WorkspaceContext }).workspaceCtx;
+    const db = getDb();
+    if (!db) return reply.code(503).send({ error: 'db_unconfigured' });
+
+    const rows = await db
+      .select({
+        id: credentials.id,
+        serviceId: credentials.serviceId,
+        fieldId: credentials.fieldId,
+        envName: credentials.envName,
+        environmentId: credentials.environmentId,
+        environmentName: environments.name,
+        createdAt: credentials.createdAt,
+        lastValidatedAt: credentials.lastValidatedAt,
+      })
+      .from(credentials)
+      .innerJoin(environments, eq(credentials.environmentId, environments.id))
+      .where(eq(environments.workspaceId, ctx.workspaceId));
+
+    const now = new Date();
+    const result = rows.map((r) => ({
+      id: r.id,
+      serviceId: r.serviceId,
+      fieldId: r.fieldId,
+      envName: r.envName,
+      environment: r.environmentName,
+      health: calculateKeyHealth(
+        {
+          serviceId: r.serviceId,
+          fieldId: r.fieldId,
+          createdAt: r.createdAt,
+          lastValidatedAt: r.lastValidatedAt,
+          // Validity: if lastValidatedAt is set, treat as ok. Real periodic
+          // validation lives in a separate worker that updates this column.
+          lastValidationOk: r.lastValidatedAt ? true : null,
+        },
+        now,
+      ),
+    }));
+
+    return reply.send({ credentials: result, gradedAt: now.toISOString() });
+  });
 
   // GET /v1/vault/audit?limit=50&cursor=<iso>
   app.get('/audit', async (req, reply) => {

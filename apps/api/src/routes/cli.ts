@@ -1,10 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { eq, and } from 'drizzle-orm';
 import { authenticate, AuthError, type WorkspaceContext } from '../auth.js';
 import { getDb } from '../db.js';
 import { generateEnvForWorkspace, type Variant } from '../env-generator.js';
 import { AuditAction } from '../crypto/index.js';
 import { appendAudit } from '../audit.js';
+import { capture, Events } from '../analytics.js';
+import { auditLog } from '@novabash/db';
 
 /**
  * CLI-side routes.
@@ -77,6 +80,32 @@ export async function cliRoutes(app: FastifyInstance) {
       target: result.variant,
       payload: { count: result.count, filename: result.filename, surface: 'cli' },
       occurredAt: new Date().toISOString(),
+    });
+
+    // Activation event from build guide line 769: first .env download is
+    // the moment the product has actually delivered for this workspace.
+    // Detect "first" by checking whether any earlier env-downloaded entry
+    // exists for the workspace.
+    const priorDownloads = await db
+      .select({ id: auditLog.id })
+      .from(auditLog)
+      .where(
+        and(
+          eq(auditLog.workspaceId, ctx.workspaceId),
+          eq(auditLog.action, AuditAction.EnvDownloaded),
+        ),
+      )
+      .limit(2);
+    const isFirst = priorDownloads.length <= 1;
+
+    void capture({
+      workspaceId: ctx.workspaceId,
+      event: isFirst ? Events.EnvDownloadedFirst : Events.EnvDownloaded,
+      properties: {
+        variant: result.variant,
+        count: result.count,
+        surface: 'cli',
+      },
     });
 
     reply

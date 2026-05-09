@@ -1,6 +1,9 @@
 import { Icon } from '@/components/Icon';
 import { EnvSwitcher } from '@/components/EnvSwitcher';
+import { KeyHealthRow } from '@/components/KeyHealthRow';
+import { ServiceGraph } from '@/components/ServiceGraph';
 import { mockServices, monthlyCostEstimate, type ServiceUsage } from '@/lib/usage-mock';
+import { mockHealthRecords } from '@/lib/health-mock';
 
 export const metadata = { title: 'Overview' };
 
@@ -10,8 +13,67 @@ export default function DashboardPage() {
       <Header />
       <Summary />
       <Grid services={mockServices} />
+      <KeyHealthSection />
+      <GraphSection />
       <Activity />
     </div>
+  );
+}
+
+function KeyHealthSection() {
+  const summary = mockHealthRecords.reduce(
+    (acc, r) => {
+      acc[r.health.overall] = (acc[r.health.overall] ?? 0) + 1;
+      return acc;
+    },
+    { green: 0, amber: 0, red: 0 } as Record<string, number>,
+  );
+  return (
+    <section className="mb-10">
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-3.5 font-mono text-[11px] uppercase tracking-caps text-fg-dim">
+          <span className="text-gold">03</span>
+          <span>key health</span>
+          <span className="h-px w-20 bg-hairline" />
+        </div>
+        <div className="flex items-center gap-4 font-mono text-[11px] text-fg-dim">
+          <span className="flex items-center gap-2">
+            <span className="block h-1.5 w-1.5 bg-mint" />
+            {summary.green ?? 0} green
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="block h-1.5 w-1.5 bg-ember" />
+            {(summary.amber ?? 0) + (summary.red ?? 0)} need attention
+          </span>
+        </div>
+      </div>
+      <div className="border border-hairline-bright bg-bg-elev">
+        {mockHealthRecords.map((r) => (
+          <KeyHealthRow key={r.id} record={r} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function GraphSection() {
+  return (
+    <section className="mb-10">
+      <div className="mb-5 flex items-center gap-3.5 font-mono text-[11px] uppercase tracking-caps text-fg-dim">
+        <span className="text-gold">04</span>
+        <span>service graph</span>
+        <span className="h-px w-20 bg-hairline" />
+      </div>
+      <div className="border border-hairline-bright bg-bg-elev p-7">
+        <ServiceGraph
+          services={mockServices.map((s) => ({
+            id: s.id,
+            name: s.name,
+            health: s.health === 'ok' ? 'green' : 'amber',
+          }))}
+        />
+      </div>
+    </section>
   );
 }
 

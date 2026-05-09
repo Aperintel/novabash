@@ -250,6 +250,97 @@ const validateCloudflare = async (
   }
 };
 
+const validateClerk = async (values: Record<string, string>): Promise<ValidationResult> => {
+  const missing = require(values, 'secretKey');
+  if (missing) return { ok: false, error: missing };
+  if (!/^sk_(test|live)_[A-Za-z0-9]+$/.test(values.secretKey!)) {
+    return { ok: false, error: 'Clerk secret key must look like sk_test_... or sk_live_...' };
+  }
+  try {
+    // /v1/instance returns the instance metadata for the secret key holder.
+    // Cheap, low-quota, and tells us the environment (test vs live).
+    const res = await safeFetch('https://api.clerk.com/v1/instance', {
+      headers: { Authorization: `Bearer ${values.secretKey!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Clerk') };
+    const body = (await res.json()) as { environment_type?: string };
+    return {
+      ok: true,
+      meta: body.environment_type ? { environment: body.environment_type } : undefined,
+    };
+  } catch {
+    return networkError('Clerk');
+  }
+};
+
+const validateNeon = async (values: Record<string, string>): Promise<ValidationResult> => {
+  const missing = require(values, 'apiKey');
+  if (missing) return { ok: false, error: missing };
+  try {
+    // /api/v2/projects?limit=1 is the cheapest read on the Neon API.
+    const res = await safeFetch('https://console.neon.tech/api/v2/projects?limit=1', {
+      headers: { Authorization: `Bearer ${values.apiKey!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Neon') };
+    return { ok: true };
+  } catch {
+    return networkError('Neon');
+  }
+};
+
+const validateSentry = async (values: Record<string, string>): Promise<ValidationResult> => {
+  const missing = require(values, 'token', 'organisation');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch(
+      `https://sentry.io/api/0/organizations/${encodeURIComponent(values.organisation!)}/`,
+      {
+        headers: { Authorization: `Bearer ${values.token!}` },
+      },
+    );
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Sentry') };
+    const body = (await res.json()) as { slug?: string };
+    return { ok: true, meta: body.slug ? { slug: body.slug } : undefined };
+  } catch {
+    return networkError('Sentry');
+  }
+};
+
+const validateAuth0 = async (values: Record<string, string>): Promise<ValidationResult> => {
+  const missing = require(values, 'domain', 'token');
+  if (missing) return { ok: false, error: missing };
+  const domain = values.domain!.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+  if (!/^[a-z0-9-]+\.(eu|us|au|jp)\.auth0\.com$/.test(domain) && !/^[a-z0-9-]+\.auth0\.com$/.test(domain)) {
+    return { ok: false, error: 'Auth0 domain must look like your-tenant.eu.auth0.com.' };
+  }
+  try {
+    const res = await safeFetch(`https://${domain}/api/v2/clients?per_page=1`, {
+      headers: { Authorization: `Bearer ${values.token!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Auth0') };
+    return { ok: true };
+  } catch {
+    return networkError('Auth0');
+  }
+};
+
+const validatePostmark = async (values: Record<string, string>): Promise<ValidationResult> => {
+  const missing = require(values, 'serverToken');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch('https://api.postmarkapp.com/server', {
+      headers: {
+        Accept: 'application/json',
+        'X-Postmark-Server-Token': values.serverToken!,
+      },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Postmark') };
+    return { ok: true };
+  } catch {
+    return networkError('Postmark');
+  }
+};
+
 const validateInngest = async (
   values: Record<string, string>,
 ): Promise<ValidationResult> => {
@@ -490,6 +581,125 @@ export const services: Record<string, ServiceAdapter> = {
       },
     ],
     validate: validateCloudflare,
+  },
+  clerk: {
+    id: 'clerk',
+    name: 'Clerk',
+    category: 'auth',
+    signupUrl: 'https://dashboard.clerk.com/sign-up',
+    apiKeysUrl: 'https://dashboard.clerk.com/last-active?path=api-keys',
+    fields: [
+      {
+        id: 'publishableKey',
+        label: 'Publishable key',
+        placeholder: 'pk_test_...',
+        helpText: 'API Keys · Publishable key',
+        envName: 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+      },
+      {
+        id: 'secretKey',
+        label: 'Secret key',
+        placeholder: 'sk_test_...',
+        helpText: 'API Keys · Secret key · server-only',
+        envName: 'CLERK_SECRET_KEY',
+        secret: true,
+      },
+    ],
+    validate: validateClerk,
+  },
+  neon: {
+    id: 'neon',
+    name: 'Neon',
+    category: 'database',
+    signupUrl: 'https://console.neon.tech/signup',
+    apiKeysUrl: 'https://console.neon.tech/app/settings/api-keys',
+    fields: [
+      {
+        id: 'apiKey',
+        label: 'API key',
+        placeholder: 'napi_...',
+        helpText: 'Account settings · API keys',
+        envName: 'NEON_API_KEY',
+        secret: true,
+      },
+      {
+        id: 'connectionString',
+        label: 'Connection string',
+        placeholder: 'postgres://user:pass@xx.neon.tech/db',
+        helpText: 'Project · Connection details · Pooled connection string',
+        envName: 'DATABASE_URL',
+        secret: true,
+      },
+    ],
+    validate: validateNeon,
+  },
+  sentry: {
+    id: 'sentry',
+    name: 'Sentry',
+    category: 'observability',
+    signupUrl: 'https://sentry.io/signup/',
+    apiKeysUrl: 'https://sentry.io/settings/account/api/auth-tokens/',
+    fields: [
+      {
+        id: 'organisation',
+        label: 'Organisation slug',
+        placeholder: 'novabash',
+        helpText: 'Settings · Organisation · slug field',
+        envName: 'SENTRY_ORG',
+      },
+      {
+        id: 'token',
+        label: 'Auth token',
+        placeholder: 'sntrys_...',
+        helpText: 'Account · API · Auth Tokens · scopes: org:read, project:read',
+        envName: 'SENTRY_AUTH_TOKEN',
+        secret: true,
+      },
+    ],
+    validate: validateSentry,
+  },
+  auth0: {
+    id: 'auth0',
+    name: 'Auth0',
+    category: 'auth',
+    signupUrl: 'https://auth0.com/signup',
+    apiKeysUrl: 'https://manage.auth0.com/dashboard/eu/your-tenant/apis',
+    fields: [
+      {
+        id: 'domain',
+        label: 'Tenant domain',
+        placeholder: 'your-tenant.eu.auth0.com',
+        helpText: 'Settings · General · Custom domain or default tenant URL',
+        envName: 'AUTH0_DOMAIN',
+      },
+      {
+        id: 'token',
+        label: 'Management API token',
+        placeholder: 'eyJ...',
+        helpText: 'APIs · Auth0 Management API · API Explorer · Token',
+        envName: 'AUTH0_MANAGEMENT_TOKEN',
+        secret: true,
+      },
+    ],
+    validate: validateAuth0,
+  },
+  postmark: {
+    id: 'postmark',
+    name: 'Postmark',
+    category: 'email',
+    signupUrl: 'https://account.postmarkapp.com/sign_up',
+    apiKeysUrl: 'https://account.postmarkapp.com/servers',
+    fields: [
+      {
+        id: 'serverToken',
+        label: 'Server token',
+        placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        helpText: 'Servers · pick the server · API Tokens',
+        envName: 'POSTMARK_SERVER_TOKEN',
+        secret: true,
+      },
+    ],
+    validate: validatePostmark,
   },
   inngest: {
     id: 'inngest',
