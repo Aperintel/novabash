@@ -32,3 +32,7 @@ pnpm-debug.log*
 
 # local data
 data/waitlist.jsonl
+
+# server probe artefacts
+.dev-server.*
+
