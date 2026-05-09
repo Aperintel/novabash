@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>NovaBash · brand and icon set</title>
+<style>
+  :root {
+    --bg: #0A0A0A; --bg-elev: #111111; --bg-elev-2: #161616;
+    --fg: #FAFAFA; --fg-mid: #A0A0A0; --fg-dim: #606060;
+    --gold: #C9A84C; --gold-bright: #E2C070;
+    --ember: #FF7A2E; --mint: #5BD9C2;
+    --hairline: #1F1F1F; --hairline-bright: #2A2A2A;
+  }
+  body { margin:0; padding:48px; background:var(--bg); color:var(--fg); font-family: 'Onest', system-ui, sans-serif; }
+  h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 8px; }
+  h2 { font-size: 12px; font-family: 'JetBrains Mono', monospace; color:var(--fg-dim); text-transform:uppercase; letter-spacing:0.1em; margin: 48px 0 16px; }
+  .lockup { display: flex; align-items: center; gap: 14px; padding: 32px; border: 1px solid var(--hairline-bright); background: var(--bg-elev); margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); }
+  .cell { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 24px; background: var(--bg-elev); }
+  .cell svg { color: var(--fg); }
+  .cell .name { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--fg-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+  .palette { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .swatch { padding: 24px; border: 1px solid var(--hairline-bright); }
+  .swatch .v { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--fg-dim); margin-top: 8px; }
+  .word { font-size: 40px; font-weight: 800; letter-spacing: -0.04em; }
+</style>
+</head>
+<body>
+<h1>NovaBash · brand and icon set</h1>
+<p style="color:var(--fg-mid); max-width:600px;">A reference page that renders every brand asset against the dark surface so the system can be eyeballed for consistency. Open this file directly in a browser.</p>
+
+<h2>01 · the mark</h2>
+<div class="lockup">
+  <svg viewBox="0 0 24 24" width="72" height="72" fill="none">
+    <g stroke="#C9A84C" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter">
+      <path d="M8 4 L6 4 L6 11 L4 12 L6 13 L6 20 L8 20"/>
+      <path d="M16 4 L18 4 L18 11 L20 12 L18 13 L18 20 L16 20"/>
+      <line x1="7" y1="12" x2="17" y2="12" stroke-width="1"/>
+    </g>
+    <circle cx="12" cy="12" r="1.6" fill="#FF7A2E"/>
+  </svg>
+  <span class="word">NovaBash</span>
+</div>
+
+<h2>02 · scale</h2>
+<div class="lockup" style="gap:32px;">
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+    <g stroke="#C9A84C" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter">
+      <path d="M8 4 L6 4 L6 12 L8 12"/><path d="M16 4 L18 4 L18 12 L16 12"/>
+      <path d="M8 20 L6 20 L6 12"/><path d="M16 20 L18 20 L18 12"/>
+    </g>
+    <circle cx="12" cy="12" r="2" fill="#FF7A2E"/>
+  </svg>
+  <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+    <g stroke="#C9A84C" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter">
+      <path d="M8 4 L6 4 L6 11 L4 12 L6 13 L6 20 L8 20"/>
+      <path d="M16 4 L18 4 L18 11 L20 12 L18 13 L18 20 L16 20"/>
+      <line x1="7" y1="12" x2="17" y2="12" stroke-width="1"/>
+    </g>
+    <circle cx="12" cy="12" r="1.6" fill="#FF7A2E"/>
+  </svg>
+  <svg viewBox="0 0 24 24" width="64" height="64" fill="none">
+    <g stroke="#C9A84C" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter">
+      <path d="M8 4 L6 4 L6 11 L4 12 L6 13 L6 20 L8 20"/>
+      <path d="M16 4 L18 4 L18 11 L20 12 L18 13 L18 20 L16 20"/>
+      <line x1="7" y1="12" x2="17" y2="12" stroke-width="1"/>
+    </g>
+    <circle cx="12" cy="12" r="1.6" fill="#FF7A2E"/>
+  </svg>
+  <svg viewBox="0 0 24 24" width="128" height="128" fill="none">
+    <g stroke="#C9A84C" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter">
+      <path d="M8 4 L6 4 L6 11 L4 12 L6 13 L6 20 L8 20"/>
+      <path d="M16 4 L18 4 L18 11 L20 12 L18 13 L18 20 L16 20"/>
+      <line x1="7" y1="12" x2="17" y2="12" stroke-width="1"/>
+    </g>
+    <circle cx="12" cy="12" r="1.6" fill="#FF7A2E"/>
+  </svg>
+</div>
+
+<h2>03 · palette</h2>
+<div class="palette">
+  <div class="swatch" style="background:#0A0A0A;"><strong>bg</strong><div class="v">#0A0A0A</div></div>
+  <div class="swatch" style="background:#111111;"><strong>bg-elev</strong><div class="v">#111111</div></div>
+  <div class="swatch" style="background:#1C1C1C;"><strong>bg-elev-3</strong><div class="v">#1C1C1C</div></div>
+  <div class="swatch" style="background:#C9A84C; color:#0A0A0A;"><strong>gold</strong><div class="v" style="color:#1C1C1C;">#C9A84C</div></div>
+  <div class="swatch" style="background:#FF7A2E; color:#0A0A0A;"><strong>ember</strong><div class="v" style="color:#1C1C1C;">#FF7A2E</div></div>
+  <div class="swatch" style="background:#5BD9C2; color:#0A0A0A;"><strong>mint</strong><div class="v" style="color:#1C1C1C;">#5BD9C2</div></div>
+</div>
+
+<h2>04 · icon set</h2>
+<div class="grid" id="icon-grid"></div>
+
+<script>
+const icons = {
+  overview: '<rect x="3" y="3" width="8" height="8"/><rect x="13" y="3" width="8" height="5"/><rect x="13" y="10" width="8" height="11"/><rect x="3" y="13" width="8" height="8"/>',
+  stacks: '<rect x="3" y="4" width="18" height="4"/><rect x="3" y="10" width="18" height="4"/><rect x="3" y="16" width="18" height="4"/>',
+  workspace: '<rect x="3" y="3" width="14" height="14"/><rect x="7" y="7" width="14" height="14"/>',
+  vault: '<rect x="4" y="4" width="16" height="16"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="13" y1="11" x2="13" y2="13"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
+  services: '<rect x="3" y="3" width="6" height="6"/><rect x="11" y="3" width="6" height="6"/><rect x="19" y="3" width="2" height="6"/><rect x="3" y="11" width="6" height="6"/><rect x="11" y="11" width="6" height="6"/><rect x="19" y="11" width="2" height="6"/><rect x="3" y="19" width="6" height="2"/><rect x="11" y="19" width="6" height="2"/>',
+  community: '<circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><line x1="7" y1="7" x2="11" y2="17"/><line x1="17" y1="7" x2="13" y2="17"/>',
+  billing: '<path d="M5 3 L19 3 L19 21 L17 19 L15 21 L13 19 L11 21 L9 19 L7 21 L5 19 Z"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="14" y2="13"/>',
+  settings: '<polygon points="12,2 15,4 18,4 18,7 21,9 21,12 21,15 18,17 18,20 15,20 12,22 9,20 6,20 6,17 3,15 3,12 3,9 6,7 6,4 9,4"/><circle cx="12" cy="12" r="3"/>',
+  ok: '<circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/>',
+  validating: '<circle cx="12" cy="12" r="6" stroke-dasharray="3 3"/><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none"/>',
+  rotating: '<path d="M18 12 A6 6 0 1 0 12 18"/><polyline points="18 8 18 12 14 12"/><line x1="11" y1="12" x2="13" y2="12"/>',
+  idle: '<circle cx="12" cy="12" r="6"/>',
+  error: '<rect x="5" y="5" width="14" height="14"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/>',
+  downloadEnv: '<rect x="4" y="4" width="16" height="11"/><polyline points="9 18 12 21 15 18"/><line x1="12" y1="14" x2="12" y2="21"/><line x1="7" y1="8" x2="11" y2="8"/><line x1="7" y1="11" x2="14" y2="11"/>',
+  copy: '<rect x="4" y="4" width="12" height="12"/><polyline points="8 8 8 20 20 20 20 8"/>',
+  rotate: '<path d="M19 12 A7 7 0 1 1 12 5"/><polyline points="19 5 19 12 12 12"/><line x1="11" y1="12" x2="13" y2="12"/>',
+  validate: '<rect x="4" y="4" width="16" height="16"/><polyline points="8 12 11 15 17 9"/>',
+  regenerate: '<path d="M5 12 A7 7 0 1 1 12 19"/><polyline points="5 19 5 12 12 12"/>',
+  fork: '<line x1="6" y1="3" x2="6" y2="13"/><line x1="18" y1="3" x2="18" y2="9"/><circle cx="6" cy="16" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 13 Q6 17 12 17 Q18 17 18 14"/>',
+  star: '<polygon points="12 3 15 9 21 10 17 14 18 21 12 18 6 21 7 14 3 10 9 9"/>',
+  share: '<rect x="4" y="11" width="16" height="10"/><polyline points="9 7 12 4 15 7"/><line x1="12" y1="4" x2="12" y2="14"/>',
+  trash: '<rect x="6" y="6" width="12" height="14"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="10" y1="3" x2="14" y2="3"/><line x1="10" y1="10" x2="10" y2="16"/><line x1="14" y1="10" x2="14" y2="16"/>',
+  expand: '<polyline points="4 9 4 4 9 4"/><polyline points="20 9 20 4 15 4"/><polyline points="4 15 4 20 9 20"/><polyline points="20 15 20 20 15 20"/>',
+  search: '<circle cx="11" cy="11" r="6"/><line x1="15" y1="15" x2="20" y2="20"/>',
+  database: '<ellipse cx="12" cy="6" rx="7" ry="2.5"/><path d="M5 6 L5 18 Q5 20.5 12 20.5 Q19 20.5 19 18 L19 6"/><path d="M5 12 Q5 14.5 12 14.5 Q19 14.5 19 12"/>',
+  function: '<rect x="3" y="6" width="18" height="12"/><path d="M8 9 Q8 12 11 12 Q8 12 8 15"/><line x1="13" y1="10" x2="17" y2="10"/><line x1="13" y1="14" x2="16" y2="14"/>',
+  queue: '<rect x="3" y="9" width="4" height="6"/><rect x="9" y="9" width="4" height="6"/><rect x="15" y="9" width="4" height="6"/><line x1="7" y1="12" x2="9" y2="12"/><line x1="13" y1="12" x2="15" y2="12"/>',
+  email: '<rect x="3" y="6" width="18" height="12"/><polyline points="3 8 12 14 21 8"/>',
+  payment: '<rect x="3" y="6" width="18" height="13"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/>',
+  model: '<polygon points="12 3 21 8 21 16 12 21 3 16 3 8"/><polyline points="3 8 12 13 21 8"/><line x1="12" y1="13" x2="12" y2="21"/>',
+  edge: '<circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3 Q6 12 12 21"/><path d="M12 3 Q18 12 12 21"/>',
+  storage: '<rect x="3" y="5" width="18" height="5"/><rect x="3" y="13" width="18" height="5"/><line x1="7" y1="7.5" x2="9" y2="7.5"/><line x1="7" y1="15.5" x2="9" y2="15.5"/>',
+  log: '<rect x="3" y="4" width="18" height="16"/><line x1="6" y1="8" x2="11" y2="8"/><line x1="6" y1="12" x2="14" y2="12"/><line x1="6" y1="16" x2="9" y2="16"/>',
+};
+const grid = document.getElementById('icon-grid');
+for (const [name, body] of Object.entries(icons)) {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter">${body}</svg><span class="name">${name}</span>`;
+  grid.appendChild(cell);
+}
+</script>
+</body>
+</html>

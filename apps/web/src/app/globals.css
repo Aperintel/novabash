@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a0a;
+  --bg-elev: #111111;
+  --bg-elev-2: #161616;
+  --bg-elev-3: #1c1c1c;
+  --hairline: #1f1f1f;
+  --hairline-bright: #2a2a2a;
+
+  --fg: #fafafa;
+  --fg-mid: #a0a0a0;
+  --fg-dim: #606060;
+  --fg-fade: #3a3a3a;
+
+  --gold: #c9a84c;
+  --gold-bright: #e2c070;
+  --gold-deep: #8a6e2a;
+  --gold-fade: rgba(201, 168, 76, 0.1);
+
+  --ember: #ff7a2e;
+  --ember-fade: rgba(255, 122, 46, 0.12);
+  --mint: #5bd9c2;
+  --mint-fade: rgba(91, 217, 194, 0.12);
+
+  --grid: rgba(255, 255, 255, 0.014);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-onest), system-ui, sans-serif;
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  overflow-x: hidden;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 64px 64px;
+  background-position: -1px -1px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--bg);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--hairline-bright);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-deep);
+}
+
+input,
+textarea,
+button {
+  font-family: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 1px solid var(--gold);
+  outline-offset: 2px;
+}
