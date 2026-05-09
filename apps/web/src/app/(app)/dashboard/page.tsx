@@ -1,4 +1,5 @@
 import { Icon } from '@/components/Icon';
+import { EnvSwitcher } from '@/components/EnvSwitcher';
 import { mockServices, monthlyCostEstimate, type ServiceUsage } from '@/lib/usage-mock';
 
 export const metadata = { title: 'Overview' };
@@ -29,6 +30,7 @@ function Header() {
         </h1>
       </div>
       <div className="flex items-center gap-2">
+        <EnvSwitcher />
         <button className="flex items-center gap-2 border border-hairline-bright px-3.5 py-2 font-mono text-[11.5px] text-fg-mid transition-colors hover:border-gold hover:text-gold">
           <Icon name="downloadEnv" size={12} />
           download .env

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { isDbReady, pingDb } from '../db.js';
 
 export async function healthRoutes(app: FastifyInstance) {
   app.get('/health', async () => ({
@@ -9,7 +10,14 @@ export async function healthRoutes(app: FastifyInstance) {
   }));
 
   app.get('/ready', async () => {
-    // Will run a real db ping once the Drizzle pool is wired in week 3.
-    return { ok: true, db: 'pending', vault: 'pending' };
+    const dbConfigured = isDbReady();
+    const dbReachable = dbConfigured ? await pingDb() : false;
+    const vaultConfigured = Boolean(process.env.VAULT_MASTER_KEY);
+    const ready = dbConfigured && dbReachable && vaultConfigured;
+    return {
+      ok: ready,
+      db: !dbConfigured ? 'unconfigured' : dbReachable ? 'ok' : 'unreachable',
+      vault: vaultConfigured ? 'ok' : 'unconfigured',
+    };
   });
 }

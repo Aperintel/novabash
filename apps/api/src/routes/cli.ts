@@ -1,16 +1,25 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
+import { authenticate, AuthError, type WorkspaceContext } from '../auth.js';
+import { getDb } from '../db.js';
+import { generateEnvForWorkspace, type Variant } from '../env-generator.js';
+import { AuditAction } from '../crypto/index.js';
+import { appendAudit } from '../audit.js';
 
 /**
- * CLI-side routes. The CLI authenticates via device-code flow (web grants
- * a workspace key, CLI exchanges short code for the key). All routes below
- * the /v1/cli prefix require a workspace-key Bearer token in week 3 onwards.
+ * CLI-side routes.
+ *
+ *   /v1/cli/device/start   start a device-code grant
+ *   /v1/cli/device/poll    poll the grant
+ *   /v1/cli/env            pull the .env for the active environment (auth required)
+ *
+ * Device-code persistence is week 5 work. The endpoints below are wired so
+ * the CLI's `novabash login` flow has a stable shape, with stubs for the
+ * grant table.
  */
 
 export async function cliRoutes(app: FastifyInstance) {
   app.post('/device/start', async () => {
-    // Stub: real implementation issues a short code, stores pending grant in
-    // Postgres, returns code + verification URL.
     const code = randomCode();
     return {
       device_code: cryptoRandom(40),
@@ -25,8 +34,6 @@ export async function cliRoutes(app: FastifyInstance) {
     const Body = z.object({ device_code: z.string().min(20) });
     const parsed = Body.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_request' });
-    // Stub: real implementation looks up the grant and returns the workspace
-    // key once the user has confirmed in the browser.
     return reply.code(202).send({ status: 'authorization_pending' });
   });
 
@@ -36,13 +43,46 @@ export async function cliRoutes(app: FastifyInstance) {
     });
     const parsed = Query.safeParse(req.query);
     if (!parsed.success) return reply.code(400).send({ error: 'invalid_request' });
-    // Stub: real implementation looks up the workspace via the bearer token,
-    // decrypts each credential under the master key, and returns the assembled
-    // .env body.
-    return reply.code(503).send({
-      error: 'not_implemented',
-      message: 'Real env generation lands in week 3 of the build.',
+
+    let ctx: WorkspaceContext;
+    try {
+      ctx = await authenticate(req);
+    } catch (err) {
+      if (err instanceof AuthError) {
+        return reply.code(err.status).send({ error: err.code, message: err.message });
+      }
+      throw err;
+    }
+
+    const db = getDb();
+    if (!db) {
+      return reply
+        .code(503)
+        .send({ error: 'db_unconfigured', message: 'API database is not configured.' });
+    }
+
+    const result = await generateEnvForWorkspace(db, {
+      workspaceId: ctx.workspaceId,
+      variant: parsed.data.variant as Variant,
+      serviceKeyId: ctx.serviceKeyId,
     });
+    if (!result.ok) {
+      return reply.code(409).send({ error: 'generate_failed', message: result.error });
+    }
+
+    await appendAudit(db, {
+      workspaceId: ctx.workspaceId,
+      actorTokenId: ctx.serviceKeyId,
+      action: AuditAction.EnvDownloaded,
+      target: result.variant,
+      payload: { count: result.count, filename: result.filename, surface: 'cli' },
+      occurredAt: new Date().toISOString(),
+    });
+
+    reply
+      .header('content-type', 'text/plain; charset=utf-8')
+      .header('content-disposition', `attachment; filename="${result.filename}"`);
+    return reply.send(result.content);
   });
 }
 

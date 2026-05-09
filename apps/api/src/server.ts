@@ -6,6 +6,7 @@ import rateLimit from '@fastify/rate-limit';
 import { healthRoutes } from './routes/health.js';
 import { cliRoutes } from './routes/cli.js';
 import { vaultRoutes } from './routes/vault.js';
+import { buildRateLimitOptions } from './rate-limit.js';
 
 export async function buildServer() {
   const app = Fastify({
@@ -28,10 +29,7 @@ export async function buildServer() {
     origin: parseOrigins(process.env.ALLOWED_ORIGINS),
     credentials: true,
   });
-  await app.register(rateLimit, {
-    max: Number(process.env.RATE_LIMIT_MAX ?? 200),
-    timeWindow: process.env.RATE_LIMIT_WINDOW ?? '1 minute',
-  });
+  await app.register(rateLimit, buildRateLimitOptions());
 
   await app.register(healthRoutes, { prefix: '/v1' });
   await app.register(cliRoutes, { prefix: '/v1/cli' });

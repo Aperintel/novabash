@@ -230,6 +230,26 @@ const validateUpstashVector = async (
   }
 };
 
+const validateCloudflare = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'token');
+  if (missing) return { ok: false, error: missing };
+  try {
+    // /user/tokens/verify is the canonical "is this token valid" call.
+    // Returns 200 with success:true when valid, 401 otherwise.
+    const res = await safeFetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+      headers: { Authorization: `Bearer ${values.token!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Cloudflare') };
+    const body = (await res.json()) as { success?: boolean; result?: { status?: string } };
+    if (!body.success) return { ok: false, error: 'Cloudflare reports the token is not active.' };
+    return { ok: true, meta: { status: body.result?.status ?? 'active' } };
+  } catch {
+    return networkError('Cloudflare');
+  }
+};
+
 const validateInngest = async (
   values: Record<string, string>,
 ): Promise<ValidationResult> => {
@@ -445,6 +465,31 @@ export const services: Record<string, ServiceAdapter> = {
       },
     ],
     validate: validateUpstashVector,
+  },
+  cloudflare: {
+    id: 'cloudflare',
+    name: 'Cloudflare',
+    category: 'cdn',
+    signupUrl: 'https://dash.cloudflare.com/sign-up',
+    apiKeysUrl: 'https://dash.cloudflare.com/profile/api-tokens',
+    fields: [
+      {
+        id: 'token',
+        label: 'API token',
+        placeholder: '0123456789abcdef...',
+        helpText: 'Profile · API Tokens · Create Token (use the "Edit Cloudflare Workers" template or a custom scope)',
+        envName: 'CLOUDFLARE_API_TOKEN',
+        secret: true,
+      },
+      {
+        id: 'accountId',
+        label: 'Account ID',
+        placeholder: '0123456789abcdef0123456789abcdef',
+        helpText: 'Right sidebar of the Cloudflare dashboard, under "API"',
+        envName: 'CLOUDFLARE_ACCOUNT_ID',
+      },
+    ],
+    validate: validateCloudflare,
   },
   inngest: {
     id: 'inngest',
