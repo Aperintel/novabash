@@ -1,7 +1,8 @@
 import { Icon } from '@/components/Icon';
-import { EnvSwitcher } from '@/components/EnvSwitcher';
+import { DashboardActions } from '@/components/DashboardActions';
 import { KeyHealthRow } from '@/components/KeyHealthRow';
 import { ServiceGraph } from '@/components/ServiceGraph';
+import { BurnRateBanner } from '@/components/BurnRateBanner';
 import { mockServices, monthlyCostEstimate, type ServiceUsage } from '@/lib/usage-mock';
 import { mockHealthRecords } from '@/lib/health-mock';
 
@@ -11,6 +12,7 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-7 py-10">
       <Header />
+      <BurnRateBanner services={mockServices} threshold={90} />
       <Summary />
       <Grid services={mockServices} />
       <KeyHealthSection />
@@ -91,17 +93,7 @@ function Header() {
           All eight services, one screen.
         </h1>
       </div>
-      <div className="flex items-center gap-2">
-        <EnvSwitcher />
-        <button className="flex items-center gap-2 border border-hairline-bright px-3.5 py-2 font-mono text-[11.5px] text-fg-mid transition-colors hover:border-gold hover:text-gold">
-          <Icon name="downloadEnv" size={12} />
-          download .env
-        </button>
-        <button className="flex items-center gap-2 bg-gold px-3.5 py-2 font-mono text-[11.5px] font-semibold text-bg transition-colors hover:bg-gold-bright">
-          <Icon name="rotate" size={12} />
-          rotate keys
-        </button>
-      </div>
+      <DashboardActions />
     </div>
   );
 }

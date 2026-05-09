@@ -7,6 +7,7 @@ import { authenticate, AuthError, type WorkspaceContext } from '../auth.js';
 import { sealCredential, openCredential, AuditAction } from '../crypto/index.js';
 import { appendAudit } from '../audit.js';
 import { calculateKeyHealth } from '../health/index.js';
+import { promoteEnvironment, type Variant } from '../promote.js';
 
 /**
  * Vault routes. All require a workspace-key Bearer token. Mutations seal
@@ -237,6 +238,7 @@ export async function vaultRoutes(app: FastifyInstance) {
         environmentName: environments.name,
         createdAt: credentials.createdAt,
         lastValidatedAt: credentials.lastValidatedAt,
+        lastValidationOk: credentials.lastValidationOk,
       })
       .from(credentials)
       .innerJoin(environments, eq(credentials.environmentId, environments.id))
@@ -255,9 +257,7 @@ export async function vaultRoutes(app: FastifyInstance) {
           fieldId: r.fieldId,
           createdAt: r.createdAt,
           lastValidatedAt: r.lastValidatedAt,
-          // Validity: if lastValidatedAt is set, treat as ok. Real periodic
-          // validation lives in a separate worker that updates this column.
-          lastValidationOk: r.lastValidatedAt ? true : null,
+          lastValidationOk: r.lastValidationOk,
         },
         now,
       ),
@@ -284,6 +284,33 @@ export async function vaultRoutes(app: FastifyInstance) {
       .orderBy(desc(auditLog.occurredAt))
       .limit(parsed.data.limit);
     return reply.send({ entries: rows, cursor: null });
+  });
+
+  // POST /v1/vault/promote
+  // Body: { from: variant, to: variant, overwrite?: boolean }
+  app.post('/promote', async (req, reply) => {
+    const Body = z.object({
+      from: z.enum(['development', 'staging', 'production']),
+      to: z.enum(['development', 'staging', 'production']),
+      overwrite: z.boolean().optional().default(false),
+    });
+    const parsed = Body.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: 'invalid_request' });
+    const ctx = (req as unknown as { workspaceCtx: WorkspaceContext }).workspaceCtx;
+    const db = getDb();
+    if (!db) return reply.code(503).send({ error: 'db_unconfigured' });
+
+    const result = await promoteEnvironment(db, {
+      workspaceId: ctx.workspaceId,
+      serviceKeyId: ctx.serviceKeyId,
+      from: parsed.data.from as Variant,
+      to: parsed.data.to as Variant,
+      overwrite: parsed.data.overwrite,
+    });
+    if (!result.ok) {
+      return reply.code(409).send({ error: 'promote_failed', message: result.error, ...result });
+    }
+    return reply.code(200).send(result);
   });
 }
 

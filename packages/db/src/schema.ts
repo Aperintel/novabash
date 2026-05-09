@@ -118,6 +118,8 @@ export const credentials = pgTable(
     dataKeyCipher: text('data_key_cipher').notNull(),
     keyVersion: integer('key_version').notNull().default(1),
     lastValidatedAt: timestamp('last_validated_at', { withTimezone: true }),
+    lastValidationOk: boolean('last_validation_ok'),
+    lastValidationError: text('last_validation_error'),
     rotationDueAt: timestamp('rotation_due_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

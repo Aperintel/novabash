@@ -341,6 +341,152 @@ const validatePostmark = async (values: Record<string, string>): Promise<Validat
   }
 };
 
+const validateCloudflareR2 = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'token', 'accountId');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const verify = await safeFetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+      headers: { Authorization: `Bearer ${values.token!}` },
+    });
+    if (!verify.ok) return { ok: false, error: mapHttpError(verify.status, 'Cloudflare R2') };
+    const list = await safeFetch(
+      `https://api.cloudflare.com/client/v4/accounts/${values.accountId!}/r2/buckets`,
+      { headers: { Authorization: `Bearer ${values.token!}` } },
+    );
+    if (!list.ok) return { ok: false, error: 'Cloudflare token works but lacks R2 scope.' };
+    return { ok: true };
+  } catch {
+    return networkError('Cloudflare R2');
+  }
+};
+
+const validateTriggerDev = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'apiKey');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch('https://api.trigger.dev/api/v1/whoami', {
+      headers: { Authorization: `Bearer ${values.apiKey!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Trigger.dev') };
+    return { ok: true };
+  } catch {
+    return networkError('Trigger.dev');
+  }
+};
+
+const validateRailway = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'token');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch('https://backboard.railway.app/graphql/v2', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${values.token!}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: '{ me { id email } }' }),
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Railway') };
+    const body = (await res.json()) as { data?: { me?: { id: string } } };
+    if (!body.data?.me) return { ok: false, error: 'Railway token rejected.' };
+    return { ok: true };
+  } catch {
+    return networkError('Railway');
+  }
+};
+
+const validateCloudinary = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'cloudName', 'apiKey', 'apiSecret');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const auth = Buffer.from(`${values.apiKey!}:${values.apiSecret!}`).toString('base64');
+    const res = await safeFetch(
+      `https://api.cloudinary.com/v1_1/${values.cloudName!}/usage`,
+      { headers: { Authorization: `Basic ${auth}` } },
+    );
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Cloudinary') };
+    return { ok: true };
+  } catch {
+    return networkError('Cloudinary');
+  }
+};
+
+const validateRevenueCat = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'secretKey', 'projectId');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch(
+      `https://api.revenuecat.com/v2/projects/${values.projectId!}`,
+      { headers: { Authorization: `Bearer ${values.secretKey!}` } },
+    );
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'RevenueCat') };
+    return { ok: true };
+  } catch {
+    return networkError('RevenueCat');
+  }
+};
+
+const validateDatadog = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'apiKey', 'appKey');
+  if (missing) return { ok: false, error: missing };
+  const site = values.site && values.site.length > 0 ? values.site : 'datadoghq.com';
+  try {
+    const res = await safeFetch(`https://api.${site}/api/v1/validate`, {
+      headers: {
+        'DD-API-KEY': values.apiKey!,
+        'DD-APPLICATION-KEY': values.appKey!,
+      },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Datadog') };
+    const body = (await res.json()) as { valid?: boolean };
+    if (!body.valid) return { ok: false, error: 'Datadog reports the keys as invalid.' };
+    return { ok: true };
+  } catch {
+    return networkError('Datadog');
+  }
+};
+
+const validateExpoEas = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'token');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch('https://api.expo.dev/v2/auth/me', {
+      headers: { Authorization: `Bearer ${values.token!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Expo EAS') };
+    return { ok: true };
+  } catch {
+    return networkError('Expo EAS');
+  }
+};
+
+const validateExpoPush = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  // Expo Push access tokens have no read-only validation endpoint, so we
+  // accept any well-shaped token and leave runtime push receipts to confirm.
+  const missing = require(values, 'accessToken');
+  if (missing) return { ok: false, error: missing };
+  if (!/^[A-Za-z0-9_-]{16,}$/.test(values.accessToken!)) {
+    return { ok: false, error: 'Expo Push access token looks malformed.' };
+  }
+  return { ok: true };
+};
+
 const validateInngest = async (
   values: Record<string, string>,
 ): Promise<ValidationResult> => {
@@ -700,6 +846,193 @@ export const services: Record<string, ServiceAdapter> = {
       },
     ],
     validate: validatePostmark,
+  },
+  'cloudflare-r2': {
+    id: 'cloudflare-r2',
+    name: 'Cloudflare R2',
+    category: 'storage',
+    signupUrl: 'https://dash.cloudflare.com/sign-up',
+    apiKeysUrl: 'https://dash.cloudflare.com/profile/api-tokens',
+    fields: [
+      {
+        id: 'token',
+        label: 'API token',
+        placeholder: '0123456789abcdef...',
+        helpText: 'Profile · API Tokens · custom token with R2:Read scope',
+        envName: 'CLOUDFLARE_R2_TOKEN',
+        secret: true,
+      },
+      {
+        id: 'accountId',
+        label: 'Account ID',
+        placeholder: '0123456789abcdef0123456789abcdef',
+        helpText: 'Right sidebar of the Cloudflare dashboard, under "API"',
+        envName: 'CLOUDFLARE_ACCOUNT_ID',
+      },
+    ],
+    validate: validateCloudflareR2,
+  },
+  'trigger-dev': {
+    id: 'trigger-dev',
+    name: 'Trigger.dev',
+    category: 'queue',
+    signupUrl: 'https://trigger.dev',
+    apiKeysUrl: 'https://cloud.trigger.dev/account/tokens',
+    fields: [
+      {
+        id: 'apiKey',
+        label: 'Personal access token',
+        placeholder: 'tr_pat_...',
+        helpText: 'Account · Personal access tokens · New token',
+        envName: 'TRIGGER_API_KEY',
+        secret: true,
+      },
+    ],
+    validate: validateTriggerDev,
+  },
+  railway: {
+    id: 'railway',
+    name: 'Railway',
+    category: 'hosting',
+    signupUrl: 'https://railway.app',
+    apiKeysUrl: 'https://railway.app/account/tokens',
+    fields: [
+      {
+        id: 'token',
+        label: 'API token',
+        placeholder: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        helpText: 'Account · Tokens · Create New Token',
+        envName: 'RAILWAY_TOKEN',
+        secret: true,
+      },
+    ],
+    validate: validateRailway,
+  },
+  cloudinary: {
+    id: 'cloudinary',
+    name: 'Cloudinary',
+    category: 'storage',
+    signupUrl: 'https://cloudinary.com/users/register/free',
+    apiKeysUrl: 'https://console.cloudinary.com/settings/api-keys',
+    fields: [
+      {
+        id: 'cloudName',
+        label: 'Cloud name',
+        placeholder: 'your-cloud',
+        helpText: 'Console · Settings · Cloud name',
+        envName: 'NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME',
+      },
+      {
+        id: 'apiKey',
+        label: 'API key',
+        placeholder: '1234567890',
+        helpText: 'Console · Settings · API Keys',
+        envName: 'CLOUDINARY_API_KEY',
+      },
+      {
+        id: 'apiSecret',
+        label: 'API secret',
+        placeholder: 'xxxxxxxx',
+        helpText: 'Console · Settings · API Keys · paired secret',
+        envName: 'CLOUDINARY_API_SECRET',
+        secret: true,
+      },
+    ],
+    validate: validateCloudinary,
+  },
+  revenuecat: {
+    id: 'revenuecat',
+    name: 'RevenueCat',
+    category: 'payment',
+    signupUrl: 'https://app.revenuecat.com/signup',
+    apiKeysUrl: 'https://app.revenuecat.com/projects',
+    fields: [
+      {
+        id: 'projectId',
+        label: 'Project ID',
+        placeholder: 'projXXXXXXXX',
+        helpText: 'Projects · pick the project · copy ID',
+        envName: 'REVENUECAT_PROJECT_ID',
+      },
+      {
+        id: 'secretKey',
+        label: 'Secret API key',
+        placeholder: 'sk_...',
+        helpText: 'Project settings · API keys · Secret key',
+        envName: 'REVENUECAT_SECRET_KEY',
+        secret: true,
+      },
+    ],
+    validate: validateRevenueCat,
+  },
+  datadog: {
+    id: 'datadog',
+    name: 'Datadog',
+    category: 'observability',
+    signupUrl: 'https://www.datadoghq.com/free-datadog-trial/',
+    apiKeysUrl: 'https://app.datadoghq.com/organization-settings/api-keys',
+    fields: [
+      {
+        id: 'apiKey',
+        label: 'API key',
+        placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        helpText: 'Organisation Settings · API Keys',
+        envName: 'DATADOG_API_KEY',
+        secret: true,
+      },
+      {
+        id: 'appKey',
+        label: 'Application key',
+        placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        helpText: 'Organisation Settings · Application Keys',
+        envName: 'DATADOG_APP_KEY',
+        secret: true,
+      },
+      {
+        id: 'site',
+        label: 'Datadog site',
+        placeholder: 'datadoghq.com',
+        helpText: 'Default datadoghq.com. Use datadoghq.eu for EU accounts.',
+        envName: 'DATADOG_SITE',
+      },
+    ],
+    validate: validateDatadog,
+  },
+  'expo-eas': {
+    id: 'expo-eas',
+    name: 'Expo EAS',
+    category: 'hosting',
+    signupUrl: 'https://expo.dev/signup',
+    apiKeysUrl: 'https://expo.dev/accounts/_/settings/access-tokens',
+    fields: [
+      {
+        id: 'token',
+        label: 'Access token',
+        placeholder: 'expo_xxxxxxxxxxxxxxxxxxxx',
+        helpText: 'Account · Access Tokens · Create',
+        envName: 'EXPO_TOKEN',
+        secret: true,
+      },
+    ],
+    validate: validateExpoEas,
+  },
+  'expo-push': {
+    id: 'expo-push',
+    name: 'Expo Push',
+    category: 'queue',
+    signupUrl: 'https://expo.dev/notifications',
+    apiKeysUrl: 'https://expo.dev/accounts/_/settings/access-tokens',
+    fields: [
+      {
+        id: 'accessToken',
+        label: 'Push access token',
+        placeholder: 'xxxxxxxxxxxxxxxxxxxx',
+        helpText: 'Same Expo access token, used as a Bearer for the push API',
+        envName: 'EXPO_PUSH_TOKEN',
+        secret: true,
+      },
+    ],
+    validate: validateExpoPush,
   },
   inngest: {
     id: 'inngest',
