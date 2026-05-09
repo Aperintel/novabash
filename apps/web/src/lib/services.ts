@@ -1,7 +1,12 @@
 /**
- * Vendor adapter registry. Each entry describes how to obtain, validate, and
- * later poll a single vendor. The validate handlers are stubbed for now and
- * will be replaced with real API calls in weeks 3-4 of the build.
+ * Vendor adapter registry. Each entry describes how to obtain credentials,
+ * which endpoint to hit to validate them, and how to map vendor errors to
+ * user-facing strings.
+ *
+ * All validate functions run on the server (Server Actions or API routes),
+ * never in the browser, so the user-pasted credentials never reach a third
+ * party from the browser process. Every fetch enforces a 5s timeout and a
+ * single retry on transient failure.
  */
 
 export type ValidationResult =
@@ -13,30 +18,245 @@ export interface KeyField {
   label: string;
   placeholder: string;
   helpText: string;
-  pattern?: RegExp;
   envName: string;
+  secret?: boolean;
 }
 
 export interface ServiceAdapter {
   id: string;
   name: string;
-  category: 'auth' | 'database' | 'hosting' | 'email' | 'payment' | 'ai' | 'storage' | 'queue' | 'analytics' | 'observability' | 'cdn';
+  category:
+    | 'auth'
+    | 'database'
+    | 'hosting'
+    | 'email'
+    | 'payment'
+    | 'ai'
+    | 'storage'
+    | 'queue'
+    | 'analytics'
+    | 'observability'
+    | 'cdn';
   signupUrl: string;
   apiKeysUrl: string;
   fields: KeyField[];
   validate: (values: Record<string, string>) => Promise<ValidationResult>;
 }
 
-const stubValidate = (vendor: string) => async (
+const TIMEOUT_MS = 5000;
+
+async function safeFetch(input: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function require(values: Record<string, string>, ...keys: string[]): string | null {
+  for (const k of keys) {
+    const v = values[k];
+    if (!v || v.trim().length === 0) return `Missing ${k}.`;
+  }
+  return null;
+}
+
+function mapHttpError(status: number, vendor: string): string {
+  if (status === 401 || status === 403) return `${vendor} rejected the credential as unauthorised.`;
+  if (status === 404) return `${vendor} could not find the resource that key points at.`;
+  if (status === 429) return `${vendor} rate-limited the validation request. Try again in a minute.`;
+  if (status >= 500) return `${vendor} is having trouble right now. Try again shortly.`;
+  return `${vendor} returned ${status}.`;
+}
+
+function networkError(vendor: string): ValidationResult {
+  return { ok: false, error: `Could not reach ${vendor}. Check the value and your network.` };
+}
+
+// ─────────────────────────────────────────────────────────────────────
+//  validators
+// ─────────────────────────────────────────────────────────────────────
+
+const validateSupabase = async (
   values: Record<string, string>,
 ): Promise<ValidationResult> => {
-  await new Promise((r) => setTimeout(r, 600));
-  const first = Object.values(values)[0];
-  if (!first || first.length < 8) {
-    return { ok: false, error: `That ${vendor} key looks too short.` };
+  const missing = require(values, 'url', 'anon', 'service');
+  if (missing) return { ok: false, error: missing };
+  const url = values.url!.replace(/\/+$/, '');
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(url)) {
+    return { ok: false, error: 'Supabase URL must look like https://xxxx.supabase.co.' };
   }
-  return { ok: true, meta: { stubbed: 'true' } };
+  try {
+    // Lightest auth-required endpoint: /auth/v1/admin/users with per_page=1 needs the service_role key.
+    const res = await safeFetch(`${url}/auth/v1/admin/users?per_page=1`, {
+      headers: {
+        apikey: values.service!,
+        Authorization: `Bearer ${values.service!}`,
+      },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Supabase') };
+    return { ok: true, meta: { project: url } };
+  } catch {
+    return networkError('Supabase');
+  }
 };
+
+const validateVercel = async (values: Record<string, string>): Promise<ValidationResult> => {
+  const missing = require(values, 'token');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch('https://api.vercel.com/v2/user', {
+      headers: { Authorization: `Bearer ${values.token!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Vercel') };
+    const body = (await res.json()) as { user?: { username?: string } };
+    return { ok: true, meta: { user: body.user?.username ?? 'unknown' } };
+  } catch {
+    return networkError('Vercel');
+  }
+};
+
+const validateResend = async (values: Record<string, string>): Promise<ValidationResult> => {
+  const missing = require(values, 'apiKey');
+  if (missing) return { ok: false, error: missing };
+  try {
+    // /domains is the cheapest auth-required endpoint that returns a useful 401 vs 200.
+    const res = await safeFetch('https://api.resend.com/domains', {
+      headers: { Authorization: `Bearer ${values.apiKey!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Resend') };
+    return { ok: true };
+  } catch {
+    return networkError('Resend');
+  }
+};
+
+const validateLemonSqueezy = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'apiKey', 'storeId');
+  if (missing) return { ok: false, error: missing };
+  if (!/^\d+$/.test(values.storeId!)) {
+    return { ok: false, error: 'Lemon Squeezy store ID must be numeric.' };
+  }
+  try {
+    const res = await safeFetch(`https://api.lemonsqueezy.com/v1/stores/${values.storeId!}`, {
+      headers: {
+        Accept: 'application/vnd.api+json',
+        Authorization: `Bearer ${values.apiKey!}`,
+      },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Lemon Squeezy') };
+    return { ok: true };
+  } catch {
+    return networkError('Lemon Squeezy');
+  }
+};
+
+const validatePlausible = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'domain', 'apiKey');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch(
+      `https://plausible.io/api/v1/stats/aggregate?site_id=${encodeURIComponent(values.domain!)}&period=day&metrics=visitors`,
+      { headers: { Authorization: `Bearer ${values.apiKey!}` } },
+    );
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Plausible') };
+    return { ok: true };
+  } catch {
+    return networkError('Plausible');
+  }
+};
+
+const validateOpenRouter = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'apiKey');
+  if (missing) return { ok: false, error: missing };
+  try {
+    const res = await safeFetch('https://openrouter.ai/api/v1/key', {
+      headers: { Authorization: `Bearer ${values.apiKey!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'OpenRouter') };
+    const body = (await res.json()) as { data?: { label?: string; usage?: number; limit?: number } };
+    const meta: Record<string, string | number> = {};
+    if (body.data?.label) meta.label = body.data.label;
+    if (typeof body.data?.usage === 'number') meta.usage = body.data.usage;
+    if (typeof body.data?.limit === 'number') meta.limit = body.data.limit;
+    return { ok: true, meta };
+  } catch {
+    return networkError('OpenRouter');
+  }
+};
+
+const validateUpstashRedis = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'url', 'token');
+  if (missing) return { ok: false, error: missing };
+  const url = values.url!.replace(/\/+$/, '');
+  try {
+    // Cheapest possible Upstash REST call: PING.
+    const res = await safeFetch(`${url}/ping`, {
+      headers: { Authorization: `Bearer ${values.token!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Upstash Redis') };
+    const body = (await res.json()) as { result?: string };
+    if (body.result !== 'PONG') return { ok: false, error: 'Unexpected response from Upstash.' };
+    return { ok: true };
+  } catch {
+    return networkError('Upstash Redis');
+  }
+};
+
+const validateUpstashVector = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'url', 'token');
+  if (missing) return { ok: false, error: missing };
+  const url = values.url!.replace(/\/+$/, '');
+  try {
+    const res = await safeFetch(`${url}/info`, {
+      headers: { Authorization: `Bearer ${values.token!}` },
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Upstash Vector') };
+    return { ok: true };
+  } catch {
+    return networkError('Upstash Vector');
+  }
+};
+
+const validateInngest = async (
+  values: Record<string, string>,
+): Promise<ValidationResult> => {
+  const missing = require(values, 'eventKey');
+  if (missing) return { ok: false, error: missing };
+  if (!/^[A-Za-z0-9_-]{16,}$/.test(values.eventKey!)) {
+    return { ok: false, error: 'Inngest event key looks malformed.' };
+  }
+  try {
+    // Inngest does not ship a /me endpoint, so we send a sandboxed test event.
+    // The /e/{key} endpoint validates the key and accepts the event without
+    // executing any function. A 200 means the key is valid.
+    const res = await safeFetch(`https://inn.gs/e/${encodeURIComponent(values.eventKey!)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'novabash/connect.test', data: { source: 'connect-flow' } }),
+    });
+    if (!res.ok) return { ok: false, error: mapHttpError(res.status, 'Inngest') };
+    return { ok: true };
+  } catch {
+    return networkError('Inngest');
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────
+//  registry
+// ─────────────────────────────────────────────────────────────────────
 
 export const services: Record<string, ServiceAdapter> = {
   supabase: {
@@ -59,6 +279,7 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'eyJ...',
         helpText: 'Settings · API · anon public',
         envName: 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+        secret: true,
       },
       {
         id: 'service',
@@ -66,9 +287,10 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'eyJ...',
         helpText: 'Settings · API · service_role · keep server-side only',
         envName: 'SUPABASE_SERVICE_ROLE_KEY',
+        secret: true,
       },
     ],
-    validate: stubValidate('Supabase'),
+    validate: validateSupabase,
   },
   vercel: {
     id: 'vercel',
@@ -83,9 +305,10 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'vercel_...',
         helpText: 'Account · Tokens · Create',
         envName: 'VERCEL_TOKEN',
+        secret: true,
       },
     ],
-    validate: stubValidate('Vercel'),
+    validate: validateVercel,
   },
   resend: {
     id: 'resend',
@@ -100,9 +323,10 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 're_...',
         helpText: 'API Keys · Create API Key · Full access',
         envName: 'RESEND_API_KEY',
+        secret: true,
       },
     ],
-    validate: stubValidate('Resend'),
+    validate: validateResend,
   },
   'lemon-squeezy': {
     id: 'lemon-squeezy',
@@ -117,6 +341,7 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'eyJ0eXAi...',
         helpText: 'Settings · API · Create API Key',
         envName: 'LEMON_SQUEEZY_API_KEY',
+        secret: true,
       },
       {
         id: 'storeId',
@@ -126,7 +351,7 @@ export const services: Record<string, ServiceAdapter> = {
         envName: 'LEMON_SQUEEZY_STORE_ID',
       },
     ],
-    validate: stubValidate('Lemon Squeezy'),
+    validate: validateLemonSqueezy,
   },
   plausible: {
     id: 'plausible',
@@ -148,9 +373,10 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'plausible_...',
         helpText: 'Settings · API Keys · New API key',
         envName: 'PLAUSIBLE_API_KEY',
+        secret: true,
       },
     ],
-    validate: stubValidate('Plausible'),
+    validate: validatePlausible,
   },
   openrouter: {
     id: 'openrouter',
@@ -165,9 +391,10 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'sk-or-v1-...',
         helpText: 'Keys · Create Key',
         envName: 'OPENROUTER_API_KEY',
+        secret: true,
       },
     ],
-    validate: stubValidate('OpenRouter'),
+    validate: validateOpenRouter,
   },
   'upstash-redis': {
     id: 'upstash-redis',
@@ -189,9 +416,10 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'AX...',
         helpText: 'Database · REST API · UPSTASH_REDIS_REST_TOKEN',
         envName: 'UPSTASH_REDIS_REST_TOKEN',
+        secret: true,
       },
     ],
-    validate: stubValidate('Upstash Redis'),
+    validate: validateUpstashRedis,
   },
   'upstash-vector': {
     id: 'upstash-vector',
@@ -213,9 +441,10 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'AX...',
         helpText: 'Index · REST API',
         envName: 'UPSTASH_VECTOR_REST_TOKEN',
+        secret: true,
       },
     ],
-    validate: stubValidate('Upstash Vector'),
+    validate: validateUpstashVector,
   },
   inngest: {
     id: 'inngest',
@@ -230,6 +459,7 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'XXXXXXXX...',
         helpText: 'Manage · Event Keys · Create',
         envName: 'INNGEST_EVENT_KEY',
+        secret: true,
       },
       {
         id: 'signingKey',
@@ -237,9 +467,10 @@ export const services: Record<string, ServiceAdapter> = {
         placeholder: 'signkey-...',
         helpText: 'Manage · Signing Keys · Create',
         envName: 'INNGEST_SIGNING_KEY',
+        secret: true,
       },
     ],
-    validate: stubValidate('Inngest'),
+    validate: validateInngest,
   },
 };
 

@@ -51,38 +51,49 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       </header>
       <main>{children}</main>
       <footer className="mt-32 border-t border-hairline">
-        <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-7 py-10 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 text-fg-dim">
-            <span className="text-gold">
-              <Logo size={18} />
+        <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-5 gap-y-3 px-7 py-6 text-[12px] text-fg-dim">
+          <span className="flex items-center gap-2">
+            <span className="text-gold-deep">
+              <Logo size={14} />
             </span>
-            <span className="font-mono text-[11px]">© 2026 Aperintel · NovaBash</span>
-          </div>
-          <div className="flex items-center gap-5 font-mono text-[11px] text-fg-dim">
-            <Link href="/changelog" className="hover:text-fg">
-              build log
-            </Link>
-            <Link href="/security" className="hover:text-fg">
-              security
-            </Link>
-            <Link href="/privacy" className="hover:text-fg">
-              privacy
-            </Link>
-            <a
-              href="https://github.com/novabash"
-              className="hover:text-fg"
-              rel="noopener noreferrer"
-            >
-              github
-            </a>
-            <a
-              href="https://x.com/novabash"
-              className="hover:text-fg"
-              rel="noopener noreferrer"
-            >
-              x
-            </a>
-          </div>
+            © 2026 Aperintel
+          </span>
+          <Link href="/terms" className="hover:text-fg">
+            Terms
+          </Link>
+          <Link href="/privacy" className="hover:text-fg">
+            Privacy
+          </Link>
+          <Link href="/dpa" className="hover:text-fg">
+            DPA
+          </Link>
+          <Link href="/cookies" className="hover:text-fg">
+            Cookies
+          </Link>
+          <Link href="/security" className="hover:text-fg">
+            Security
+          </Link>
+          <Link href="/changelog" className="hover:text-fg">
+            Build log
+          </Link>
+          <a
+            href="https://github.com/osiabu/novabash"
+            className="hover:text-fg"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
+          <a
+            href="https://x.com/novabash"
+            className="hover:text-fg"
+            rel="noopener noreferrer"
+          >
+            X
+          </a>
+          <span className="ml-auto flex items-center gap-2 font-mono text-[11px]">
+            <span className="block h-1.5 w-1.5 animate-glow bg-mint shadow-[0_0_6px_var(--mint)]" />
+            All systems normal
+          </span>
         </div>
       </footer>
     </div>
