@@ -36,3 +36,6 @@ data/waitlist.jsonl
 # server probe artefacts
 .dev-server.*
 
+# personal action list (not tracked)
+OUTSTANDING.txt
+
