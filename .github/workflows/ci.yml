@@ -39,10 +39,6 @@ jobs:
         working-directory: apps/web
         run: pnpm typecheck
 
-      - name: Typecheck api
-        working-directory: apps/api
-        run: pnpm typecheck
-
       - name: Build CLI
         working-directory: packages/cli
         run: pnpm build
@@ -52,7 +48,3 @@ jobs:
         run: pnpm build
         env:
           NEXT_TELEMETRY_DISABLED: '1'
-
-      - name: Build api
-        working-directory: apps/api
-        run: pnpm build
