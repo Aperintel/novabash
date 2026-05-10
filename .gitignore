@@ -36,6 +36,11 @@ data/waitlist.jsonl
 # server probe artefacts
 .dev-server.*
 
-# personal action list (not tracked)
+# personal action list and planning artefacts (not tracked)
 OUTSTANDING.txt
+BLOCKERS.md
+DEPLOY.md
+NovaBash_Build_Plan.txt
+novabash_blueprint.html
+launch/
 
