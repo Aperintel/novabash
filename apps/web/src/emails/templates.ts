@@ -101,7 +101,7 @@ If you only ever learn three NovaBash CLI commands, these are the right three.
   novabash status             every service's health, key age, and burn rate
   novabash rotate <service>   rotate the credential and regenerate every .env
 
-The CLI is open source and lives at github.com/osiabu/novabash. Pull requests welcome, issues read.
+The CLI is open source and lives at github.com/novabash/cli. Pull requests welcome, issues read.
 
 Osi, NovaBash`,
     html: (ctx) =>
@@ -110,7 +110,7 @@ Osi, NovaBash`,
 <pre style="background:#0a0a0a;border:1px solid #1f1f1f;padding:16px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#fafafa;">novabash pull               write the .env for the active environment
 novabash status             every service's health, key age, and burn rate
 novabash rotate &lt;service&gt;   rotate the credential and regenerate every .env</pre>
-<p>The CLI is open source and lives at <a href="https://github.com/osiabu/novabash" style="color:#c9a84c;">github.com/osiabu/novabash</a>. Pull requests welcome, issues read.</p>
+<p>The CLI is open source and lives at <a href="https://github.com/novabash/cli" style="color:#c9a84c;">github.com/novabash/cli</a>. Pull requests welcome, issues read.</p>
 <p style="color:#fafafa;">Osi, NovaBash</p>`),
   },
   {

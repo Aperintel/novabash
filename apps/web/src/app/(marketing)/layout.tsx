@@ -71,7 +71,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             Changelog
           </Link>
           <a
-            href="https://github.com/osiabu/novabash"
+            href="https://github.com/novabash/novabash"
             className="hover:text-fg"
             rel="noopener noreferrer"
           >
