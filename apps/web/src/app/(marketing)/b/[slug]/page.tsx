@@ -95,16 +95,10 @@ export default function BundleDetailPage({ params }: PageProps) {
                   {b.averageRating.toFixed(1)} <span className="text-gold">★</span>
                 </span>
               </div>
-              <div className="space-y-1 px-5 py-4 text-[13.5px] text-fg-mid">
-                <p className="leading-[1.6]">
-                  Reviews need a reviewer history before they show up here. The system weights
-                  them by how many bundles a reviewer has shipped that other developers forked,
-                  so the average rating is not a popularity score, it is a "would another senior
-                  trust this stack" score.
-                </p>
-                <p className="mt-3 font-mono text-[11px] text-fg-dim">
-                  // first reviews land in week 12 of the build per the v1.2 plan.
-                </p>
+              <div className="px-5 py-4 text-[13.5px] leading-[1.6] text-fg-mid">
+                Reviews are weighted by how many bundles a reviewer has shipped that other
+                developers forked, so the average rating is not a popularity score, it is a
+                "would another senior trust this stack" score. Be the first to review.
               </div>
             </div>
           </div>

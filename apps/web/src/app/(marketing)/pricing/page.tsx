@@ -94,8 +94,8 @@ export default function PricingPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-7 pt-14">
       <div className="mb-7 flex items-center gap-3.5 font-mono text-[11px] uppercase tracking-caps text-fg-dim">
-        <span className="text-gold">03</span>
-        <span>pricing</span>
+        <span className="text-gold">Pricing</span>
+        <span>Pay only when polling matters</span>
         <span className="h-px max-w-[80px] flex-1 bg-hairline" />
       </div>
       <h1 className="mb-6 max-w-[900px] text-[clamp(32px,4.5vw,56px)] font-extrabold leading-[1] tracking-heading">

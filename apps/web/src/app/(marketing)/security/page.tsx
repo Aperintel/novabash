@@ -1,5 +1,3 @@
-import Link from 'next/link';
-
 export const metadata = {
   title: 'Security',
   description:
@@ -43,8 +41,8 @@ export default function SecurityPage() {
   return (
     <div className="mx-auto max-w-[1100px] px-7 pt-14">
       <div className="mb-7 flex items-center gap-3.5 font-mono text-[11px] uppercase tracking-caps text-fg-dim">
-        <span className="text-gold">trust</span>
-        <span>security</span>
+        <span className="text-gold">Security</span>
+        <span>How we hold your credentials</span>
         <span className="h-px max-w-[80px] flex-1 bg-hairline" />
       </div>
       <h1 className="mb-6 max-w-[900px] text-[clamp(32px,4.5vw,56px)] font-extrabold leading-[1] tracking-heading">
@@ -86,13 +84,6 @@ export default function SecurityPage() {
           PGP key on request. Please include reproduction steps and the workspace ID if the issue
           is specific to a workspace. We will acknowledge within 24 hours and aim for an initial
           mitigation within five working days for anything material.
-        </p>
-        <p className="font-mono text-[11.5px] text-fg-dim">
-          // a full security and compliance posture document, including SOC 2 readiness notes,
-          will live here ahead of the v1.0 launch.{' '}
-          <Link href="/changelog" className="text-gold hover:underline">
-            track in the build log →
-          </Link>
         </p>
       </div>
     </div>

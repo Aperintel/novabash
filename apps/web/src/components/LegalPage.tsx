@@ -40,19 +40,6 @@ export function LegalPage({
 
       <div className="mb-12 max-w-[680px] text-[16px] leading-[1.65] text-fg-mid">{intro}</div>
 
-      {draftNote && (
-        <div className="mb-12 border border-hairline-bright bg-bg-elev p-5">
-          <p className="font-mono text-[11.5px] leading-[1.7] text-fg-dim">
-            <span className="text-gold">// note</span> &nbsp; This page is a working draft for
-            v0.1. Before NovaBash takes its first paying customer, every legal page on this
-            domain goes through a UK technology solicitor for review. Until that pass, treat the
-            text below as an honest description of what NovaBash does, not a binding contract.
-            The final reviewed versions will replace these drafts ahead of the v1.0 launch and
-            will be archived here with the original effective dates so the trail stays intact.
-          </p>
-        </div>
-      )}
-
       <div className="space-y-12">
         {sections.map((s) => (
           <section key={s.num} id={s.num.replace('/', '').toLowerCase()}>
@@ -88,6 +75,12 @@ export function LegalPage({
           Security
         </Link>
       </div>
+
+      {draftNote && (
+        <p className="mt-10 max-w-[680px] font-mono text-[10.5px] leading-[1.7] text-fg-fade">
+          Pre-launch revision · independent legal review is part of our v1.0 release process.
+        </p>
+      )}
     </div>
   );
 }

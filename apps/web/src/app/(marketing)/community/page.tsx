@@ -13,10 +13,9 @@ export default function CommunityPage() {
   return (
     <div className="mx-auto max-w-[1400px] px-7 pt-14">
       <div className="mb-7 flex items-center gap-3.5 font-mono text-[11px] uppercase tracking-caps text-fg-dim">
-        <span className="text-gold">community</span>
-        <span>catalogue</span>
+        <span className="text-gold">Community</span>
+        <span>Trending stacks</span>
         <span className="h-px max-w-[80px] flex-1 bg-hairline" />
-        <span>{items.length} bundles</span>
       </div>
 
       <h1 className="mb-5 max-w-[900px] text-[clamp(32px,4.5vw,56px)] font-extrabold leading-[1] tracking-heading">

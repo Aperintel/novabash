@@ -13,18 +13,7 @@ export default function HomePage() {
 
 function Hero() {
   return (
-    <section className="pb-20 pt-20">
-      <div className="mb-14 flex items-center gap-5 font-mono text-[11px] tracking-[0.02em] text-fg-dim">
-        <span className="block h-1.5 w-1.5 animate-glow bg-mint shadow-[0_0_8px_var(--mint)]" />
-        <span>v0.1 · invite beta</span>
-        <span className="h-3 w-px bg-hairline-bright" />
-        <span>built in London</span>
-        <span className="h-3 w-px bg-hairline-bright" />
-        <Link href="/changelog" className="text-gold hover:text-gold-bright hover:underline">
-          read the build log →
-        </Link>
-      </div>
-
+    <section className="pb-20 pt-24">
       <h1 className="mb-7 max-w-[1100px] text-[clamp(42px,7vw,88px)] font-extrabold leading-[0.95] tracking-display">
         A vault, a graph,
         <br />
@@ -43,20 +32,20 @@ function Hero() {
 
       <div className="mb-16 flex flex-wrap items-center gap-3.5">
         <Link
-          href="/dashboard"
+          href="/sign-up"
           className="flex items-center gap-2.5 bg-gold px-6 py-3.5 text-[14px] font-semibold text-bg transition-colors duration-150 ease-nb hover:bg-gold-bright"
         >
-          try the dashboard
+          Start free
           <span className="font-mono text-xs">→</span>
         </Link>
         <Link
           href="/stacks"
           className="flex items-center gap-2.5 border border-hairline-bright bg-transparent px-6 py-3.5 text-[14px] font-medium text-fg transition-colors duration-150 ease-nb hover:border-gold hover:text-gold"
         >
-          browse stacks
+          Browse stacks
         </Link>
         <span className="ml-2 font-mono text-[11px] text-fg-dim">
-          free for fifty projects · forever
+          fifty projects on the free tier, forever
         </span>
       </div>
 
