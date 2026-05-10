@@ -7,6 +7,7 @@ import { healthRoutes } from './routes/health.js';
 import { cliRoutes } from './routes/cli.js';
 import { vaultRoutes } from './routes/vault.js';
 import { adminRoutes } from './routes/admin.js';
+import { gdprRoutes } from './routes/gdpr.js';
 import { buildRateLimitOptions } from './rate-limit.js';
 
 export async function buildServer() {
@@ -36,6 +37,7 @@ export async function buildServer() {
   await app.register(cliRoutes, { prefix: '/v1/cli' });
   await app.register(vaultRoutes, { prefix: '/v1/vault' });
   await app.register(adminRoutes, { prefix: '/v1/admin' });
+  await app.register(gdprRoutes, { prefix: '/v1/gdpr' });
 
   app.setNotFoundHandler((_req, reply) => {
     reply.code(404).send({ error: 'not_found' });

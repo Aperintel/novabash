@@ -1,0 +1,68 @@
+{
+  "name": "novabash",
+  "displayName": "NovaBash",
+  "description": "Pull NovaBash credentials into VS Code, watch usage, rotate keys.",
+  "version": "0.0.1",
+  "publisher": "aperintel",
+  "private": true,
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": ["Other"],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:novabash.signIn",
+    "onCommand:novabash.pull",
+    "onCommand:novabash.rotate",
+    "onView:novabash.services"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "novabash",
+          "title": "NovaBash",
+          "icon": "resources/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "novabash": [
+        {
+          "id": "novabash.services",
+          "name": "Connected services"
+        }
+      ]
+    },
+    "commands": [
+      { "command": "novabash.signIn", "title": "NovaBash: Sign in" },
+      { "command": "novabash.pull", "title": "NovaBash: Pull .env" },
+      { "command": "novabash.rotate", "title": "NovaBash: Rotate credential" }
+    ],
+    "configuration": {
+      "title": "NovaBash",
+      "properties": {
+        "novabash.apiUrl": {
+          "type": "string",
+          "default": "https://api.novabash.dev",
+          "description": "NovaBash API base URL. Override only for self-hosted instances."
+        },
+        "novabash.environment": {
+          "type": "string",
+          "default": "development",
+          "enum": ["development", "staging", "production"],
+          "description": "Environment variant pulled by NovaBash: Pull .env."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "22.9.0",
+    "@types/vscode": "1.95.0",
+    "typescript": "5.6.3"
+  }
+}

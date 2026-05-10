@@ -1,0 +1,33 @@
+name: 'NovaBash · pull .env'
+description: 'Pull the .env for a NovaBash workspace into the GitHub Actions runner.'
+author: 'Aperintel'
+branding:
+  icon: 'lock'
+  color: 'orange'
+
+inputs:
+  workspace-key:
+    description: 'NovaBash workspace key (nbk_...). Set as a repo secret and pass via secrets.NB_WORKSPACE_KEY.'
+    required: true
+  env:
+    description: 'Environment to pull: development, staging, or production.'
+    required: false
+    default: 'production'
+  output:
+    description: 'Output file path.'
+    required: false
+    default: '.env'
+  api-url:
+    description: 'NovaBash API base URL. Override only for self-hosted instances.'
+    required: false
+    default: 'https://api.novabash.dev'
+
+outputs:
+  bytes-written:
+    description: 'Number of bytes written to the output file.'
+  variant:
+    description: 'The environment variant that was pulled.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'

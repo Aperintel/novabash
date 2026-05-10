@@ -46,14 +46,56 @@ export const environmentNameEnum = pgEnum('environment_name', [
   'production',
 ]);
 
-export const userProfile = pgTable('user_profile', {
-  userId: uuid('user_id').primaryKey(), // FK -> auth.users(id) via RLS
-  projectType: projectTypeEnum('project_type'),
-  experience: experienceEnum('experience'),
-  defaultBundle: varchar('default_bundle', { length: 64 }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+export const userProfile = pgTable(
+  'user_profile',
+  {
+    userId: uuid('user_id').primaryKey(),
+    handle: varchar('handle', { length: 32 }).unique(),
+    displayName: varchar('display_name', { length: 80 }),
+    bio: text('bio'),
+    websiteUrl: varchar('website_url', { length: 254 }),
+    githubLogin: varchar('github_login', { length: 64 }),
+    projectType: projectTypeEnum('project_type'),
+    experience: experienceEnum('experience'),
+    defaultBundle: varchar('default_bundle', { length: 64 }),
+    stripeCustomerId: varchar('stripe_customer_id', { length: 80 }),
+    plan: varchar('plan', { length: 16 }).notNull().default('free'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    handleIdx: index('user_profile_handle_idx').on(t.handle),
+  }),
+);
+
+export const bundleStars = pgTable(
+  'bundle_stars',
+  {
+    bundleId: uuid('bundle_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.bundleId, t.userId] }),
+    bundleIdx: index('bundle_stars_bundle_idx').on(t.bundleId),
+  }),
+);
+
+export const bundleReviews = pgTable(
+  'bundle_reviews',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    bundleId: uuid('bundle_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    rating: integer('rating').notNull(),
+    body: text('body'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    bundleIdx: index('bundle_reviews_bundle_idx').on(t.bundleId),
+  }),
+);
 
 export const workspaces = pgTable(
   'workspaces',

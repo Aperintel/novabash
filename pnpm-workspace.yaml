@@ -1,3 +1,7 @@
 packages:
   - "apps/*"
   - "packages/*"
+
+# vscode-ext is excluded from the default `-r` recursive runs because it
+# needs the @types/vscode toolchain and ships separately. Build it
+# explicitly with `pnpm --filter novabash build` when needed.

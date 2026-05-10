@@ -1,0 +1,19 @@
+{
+  "name": "@novabash/gh-action",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Pull a NovaBash workspace .env into a GitHub Actions runner.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@actions/core": "1.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.9.0",
+    "typescript": "5.6.3"
+  }
+}
