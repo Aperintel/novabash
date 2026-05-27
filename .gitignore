@@ -55,3 +55,10 @@ launch/
 *-infographic.html
 *-mock.html
 *-prototype.html
+# Public repo-health files (override the broad *.md ignore above)
+!SECURITY.md
+!CONTRIBUTING.md
+!CODE_OF_CONDUCT.md
+!README.md
+!CONTRIBUTORS.md
+!.github/**/*.md
