@@ -17,7 +17,7 @@ required input, one network call, one file written.
 
 | name           | required | default                       | notes                                                |
 | -------------- | -------- | ----------------------------- | ---------------------------------------------------- |
-| `workspace-key`| yes      | —                             | `nbk_...` token. Store as `secrets.NB_WORKSPACE_KEY` |
+| `workspace-key`| yes      | -                             | `nbk_...` token. Store as `secrets.NB_WORKSPACE_KEY` |
 | `env`          | no       | `production`                  | `development`, `staging`, or `production`            |
 | `output`       | no       | `.env`                        | Path relative to `GITHUB_WORKSPACE`                  |
 | `api-url`      | no       | `https://api.novabash.dev`    | Override only for self-hosted instances              |

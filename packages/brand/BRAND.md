@@ -59,10 +59,10 @@ Never `Novabash`, never `novabash` except in CLI commands and URL paths where
 lowercase is forced by the medium.
 
 Lockup variants:
-- `mark-only` — favicon, app icon, loading states, avatar
-- `horizontal` — default lockup, top bar, marketing hero
-- `stacked` — square avatars where horizontal does not fit
-- `wordmark-only` — footers, watermarks, very wide hairline rules
+- `mark-only`: favicon, app icon, loading states, avatar
+- `horizontal`: default lockup, top bar, marketing hero
+- `stacked`: square avatars where horizontal does not fit
+- `wordmark-only`: footers, watermarks, very wide hairline rules
 
 ## Typography
 

@@ -49,7 +49,7 @@ export function TerminalHero() {
           <span className="block h-2.5 w-2.5 rounded-full bg-hairline-bright" />
         </div>
         <span className="text-[11px] tracking-[0.02em] text-fg-dim">
-          ~/projects/ai-saas-starter — zsh
+          ~/projects/ai-saas-starter, zsh
         </span>
         <span className="text-[10px] uppercase tracking-caps text-mint">● live</span>
       </div>

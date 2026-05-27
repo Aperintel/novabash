@@ -8,11 +8,11 @@ interface PageProps {
 }
 
 const profiles: Record<string, { name: string; bio: string; website?: string; githubLogin?: string }> = {
-  osi: {
-    name: 'Osi Abu',
-    bio: 'Founder of Aperintel, building NovaBash. Senior Test Analyst at TPR. Writes about AI governance, ships AI-assisted, lives in London.',
-    website: 'https://osiabu.vercel.app',
-    githubLogin: 'osiabu',
+  novabash: {
+    name: 'NovaBash',
+    bio: 'The NovaBash team. We maintain the first-party bundle catalogue plus the platform itself. Every first-party bundle is shipped under the novabash handle and reviewed against the same hygiene checks the community catalogue runs.',
+    website: 'https://novabash.dev',
+    githubLogin: 'aperintel',
   },
   priya: {
     name: 'Priya Iyer',

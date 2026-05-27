@@ -271,11 +271,11 @@ function StepReview({
         Confirm and we kick off the connect flow. You can change anything later.
       </p>
       <dl className="border-t border-hairline">
-        <Row label="project" value={projectType ?? '—'} />
-        <Row label="experience" value={experience ?? '—'} />
-        <Row label="bundle" value={b?.name ?? '—'} />
-        <Row label="services" value={b ? b.services.map((s) => s.name).join(' · ') : '—'} />
-        <Row label="keys" value={b ? `${b.keyCount} to obtain` : '—'} />
+        <Row label="project" value={projectType ?? '-'} />
+        <Row label="experience" value={experience ?? '-'} />
+        <Row label="bundle" value={b?.name ?? '-'} />
+        <Row label="services" value={b ? b.services.map((s) => s.name).join(' · ') : '-'} />
+        <Row label="keys" value={b ? `${b.keyCount} to obtain` : '-'} />
       </dl>
       <Footer onBack={onBack} onNext={onFinish} disabled={!bundle} ctaLabel="Start the connect flow" />
     </div>

@@ -3,12 +3,12 @@ import prompts from 'prompts';
 import ora from 'ora';
 
 const bundleChoices = [
-  { title: 'Launchpad — standard SaaS', value: 'launchpad' },
-  { title: 'Builder AI — AI-powered SaaS', value: 'builder-ai' },
-  { title: 'Edge Stack — edge-first', value: 'edge-stack' },
-  { title: 'Data Stack — pipelines and queues', value: 'data-stack' },
-  { title: 'Mobile First — Expo and Supabase', value: 'mobile-first' },
-  { title: 'Enterprise Ready — SOC2-ready', value: 'enterprise-ready' },
+  { title: 'Launchpad, standard SaaS', value: 'launchpad' },
+  { title: 'Builder AI, AI-powered SaaS', value: 'builder-ai' },
+  { title: 'Edge Stack, edge-first', value: 'edge-stack' },
+  { title: 'Data Stack, pipelines and queues', value: 'data-stack' },
+  { title: 'Mobile First, Expo and Supabase', value: 'mobile-first' },
+  { title: 'Enterprise Ready, SOC2-ready', value: 'enterprise-ready' },
 ];
 
 export async function initCmd() {
