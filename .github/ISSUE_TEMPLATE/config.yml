@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security report
+    url: https://github.com/aperintel/novabash/security/advisories/new
+    about: Please do not file security issues publicly. Use a GitHub Security Advisory, or email enquiries@aperintel.com with the subject [NovaBash Security].
+  - name: NovaBash homepage
+    url: https://novabash.dev
+    about: Marketing site, bundle catalogue, and platform documentation.
+  - name: Aperintel on GitHub
+    url: https://github.com/aperintel
+    about: The Aperintel organisation. NovaBash is one of several Aperintel products.
