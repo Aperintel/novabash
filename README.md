@@ -22,6 +22,9 @@ is no account to create and no server holding your secrets.
 - **Multiple environments.** Keep separate values per environment (development,
   staging, and production by default, plus any you add) and generate the right
   `.env` for each.
+- **A 24-word recovery phrase.** Set when you create the vault, it is the way
+  back in if you forget your passphrase, and it powers changing your passphrase.
+  Lose both the passphrase and the phrase and the vault is gone, by design.
 - **Curated stack bundles.** Common combinations of services (a starter stack, an
   edge stack, a data stack, and more) ship as ready-made templates you can apply
   and fill in.

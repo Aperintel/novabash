@@ -7,24 +7,14 @@ export const metadata: Metadata = {
 
 const entries: Array<{ date: string; title: string; body: string }> = [
   {
-    date: '2026-05-10',
-    title: 'Multi-environment promote flow',
-    body: 'Copy every credential from staging to production with a single confirmation. Each credential is re-sealed under a fresh data key on the way over and audit-logged separately, with a summary entry tying the rotations together.',
+    date: '2026-05-30',
+    title: 'Multiple environment profiles',
+    body: 'Each key now holds a separate value per environment, with development, staging, and production by default and any others you add. Switch environment in the dashboard and generate the matching .env. All of it stays in the local vault.',
   },
   {
-    date: '2026-05-10',
-    title: 'Key Health, four signals per credential',
-    body: 'Every key is graded on age, validity, scope, and exposure. The dashboard surfaces a single traffic-light status with a chevron-expand for the full breakdown, and contextually offers a one-click rotation when red.',
-  },
-  {
-    date: '2026-05-09',
-    title: 'Eight launch services, real validation',
-    body: 'Supabase, Vercel, Resend, Lemon Squeezy, Plausible, OpenRouter, Upstash, and Cloudflare now validate against the vendor before a credential lands in the vault. Wrong scope, malformed token, expired key, all caught on the connect step.',
-  },
-  {
-    date: '2026-05-09',
-    title: 'Community catalogue is open',
-    body: 'Forkable bundles with lineage, weighted star reviews, developer profiles. Eight stacks seeded, the trending feed is live, publishing your own bundle ships next.',
+    date: '2026-05-30',
+    title: 'NovaBash is now local-first (v0.2)',
+    body: 'A full rebuild. The vault is encrypted in your browser with AES-256-GCM under a passphrase you choose, and stored on your device. No account, no server, no database, no subscription. Generate a .env on demand, keep a tamper-evident local audit log, and export an encrypted backup whenever you like.',
   },
 ];
 
@@ -40,9 +30,15 @@ export default function ChangelogPage() {
         Changelog
       </h1>
       <p className="mb-16 max-w-[600px] text-[17px] leading-[1.55] text-fg-mid">
-        What shipped, in reverse order. Subscribe via the RSS feed at{' '}
-        <span className="font-mono text-fg">novabash.dev/changelog/feed.xml</span> if you would
-        rather read this in your reader.
+        What shipped, newest first. The full commit history lives on{' '}
+        <a
+          className="font-mono text-gold hover:underline"
+          href="https://github.com/aperintel/novabash"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>
+        .
       </p>
       <div className="border-t border-hairline">
         {entries.map((e) => (

@@ -30,7 +30,9 @@ export type AuditAction =
   | 'env.add'
   | 'env.remove'
   | 'vault.export'
-  | 'vault.import';
+  | 'vault.import'
+  | 'vault.passphrase'
+  | 'vault.recovery';
 
 export interface AuditEntry {
   ts: string;
@@ -55,13 +57,23 @@ export interface KdfParams {
   hash: 'SHA-256';
 }
 
+// A DEK wrapped (encrypted) under a key-encryption key. base64 iv + ciphertext.
+export interface WrappedKey {
+  iv: string;
+  ct: string;
+}
+
 // The only thing ever written to disk or exported: an opaque encrypted blob.
+// A random data key encrypts the vault; that data key is wrapped by the
+// passphrase-derived key and (optionally) by the recovery-phrase-derived key.
 export interface EncryptedVault {
   format: 'novabash-vault';
-  version: 1;
-  kdf: KdfParams;
-  iv: string; // base64
-  ciphertext: string; // base64, AES-GCM of the JSON-encoded VaultData
+  version: 2;
+  kdf: KdfParams; // for the passphrase-derived key-encryption key
+  passWrap: WrappedKey; // data key wrapped by the passphrase
+  recoveryWrap?: WrappedKey; // data key wrapped by the recovery phrase, if set
+  iv: string; // base64, iv for the vault ciphertext
+  ciphertext: string; // base64, AES-GCM of the JSON-encoded VaultData under the data key
 }
 
 export const SCHEMA_VERSION = 2;

@@ -1,8 +1,7 @@
 'use client';
 
-// The vault React context. Holds the unlocked vault data and the derived key in
-// memory for the session, and exposes every operation the UI needs. All work is
-// local; nothing leaves the device.
+// The vault React context. Holds the unlocked data key and envelope in memory
+// for the session and exposes every operation the UI needs. All work is local.
 
 import {
   createContext,
@@ -15,11 +14,16 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  decryptVault,
-  encryptVault,
-  keyFromKdf,
-  newKey,
+  makeRecovery,
+  newEnvelope,
+  newVault,
+  openLegacy,
+  openWithPassphrase,
+  openWithRecovery,
   randomId,
+  rewrapPassphrase,
+  sealVault,
+  type Envelope,
 } from './crypto';
 import { appendAudit, verifyChain, withTouch, type ChainResult } from './audit';
 import { clearVault, hasVault, loadEncrypted, saveEncrypted } from './store';
@@ -28,7 +32,7 @@ import {
   DEFAULT_ENVIRONMENTS,
   emptyVault,
   type AuditAction,
-  type KdfParams,
+  type EncryptedVault,
   type VaultData,
   type VaultField,
   type VaultService,
@@ -46,8 +50,16 @@ interface VaultContextValue {
   status: VaultStatus;
   data: VaultData | null;
   error: string | null;
+  hasRecovery: boolean;
+  needsRecoverySetup: boolean;
+  recoveredViaKey: boolean;
+  recoveryReveal: string | null;
   createVault: (passphrase: string) => Promise<void>;
   unlock: (passphrase: string) => Promise<void>;
+  recoverWithMnemonic: (mnemonic: string) => Promise<void>;
+  changePassphrase: (newPassphrase: string) => Promise<void>;
+  generateRecoveryKey: () => Promise<void>;
+  dismissRecoveryReveal: () => void;
   lock: () => void;
   addService: (name: string, fields?: VaultField[], bundleId?: string) => Promise<void>;
   updateService: (id: string, patch: Partial<Omit<VaultService, 'id'>>) => Promise<void>;
@@ -64,24 +76,32 @@ interface VaultContextValue {
 
 const VaultContext = createContext<VaultContextValue | null>(null);
 
-// Ask the browser to keep the vault's storage rather than evicting it under
-// storage pressure. Best-effort; ignored where unsupported.
 async function requestPersistence(): Promise<void> {
   try {
     if (typeof navigator !== 'undefined' && navigator.storage?.persist) {
       await navigator.storage.persist();
     }
   } catch {
-    // Persistence is a best-effort hint; carry on if it is unavailable.
+    // Best-effort hint; carry on if unavailable.
   }
+}
+
+// A stored blob is the new envelope format when it carries passWrap.
+function isEnvelope(blob: unknown): blob is EncryptedVault {
+  return typeof blob === 'object' && blob !== null && 'passWrap' in blob;
 }
 
 export function VaultProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<VaultStatus>('loading');
   const [data, setData] = useState<VaultData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const keyRef = useRef<CryptoKey | null>(null);
-  const kdfRef = useRef<KdfParams | null>(null);
+  const [needsRecoverySetup, setNeedsRecoverySetup] = useState(false);
+  const [recoveredViaKey, setRecoveredViaKey] = useState(false);
+  const [recoveryReveal, setRecoveryReveal] = useState<string | null>(null);
+
+  const dekKeyRef = useRef<CryptoKey | null>(null);
+  const dekRawRef = useRef<Uint8Array | null>(null);
+  const envelopeRef = useRef<Envelope | null>(null);
 
   useEffect(() => {
     hasVault()
@@ -90,9 +110,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const persist = useCallback(async (next: VaultData) => {
-    if (!keyRef.current || !kdfRef.current) throw new Error('Vault is locked.');
+    if (!dekKeyRef.current || !envelopeRef.current) throw new Error('Vault is locked.');
     const touched = withTouch(next);
-    const blob = await encryptVault(touched, keyRef.current, kdfRef.current);
+    const blob = await sealVault(touched, dekKeyRef.current, envelopeRef.current);
     await saveEncrypted(blob);
     setData(touched);
   }, []);
@@ -116,48 +136,120 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       await requestPersistence();
-      const { key, kdf } = await newKey(passphrase);
-      keyRef.current = key;
-      kdfRef.current = kdf;
+      const { keys, envelope, mnemonic } = await newVault(passphrase);
+      dekKeyRef.current = keys.dekKey;
+      dekRawRef.current = keys.dekRaw;
+      envelopeRef.current = envelope;
       const fresh = emptyVault();
       const audit = await appendAudit(fresh.audit, 'vault.create');
-      const withAudit = { ...fresh, audit };
-      const blob = await encryptVault(withTouch(withAudit), key, kdf);
-      await saveEncrypted(blob);
-      setData(withTouch(withAudit));
+      await persist({ ...fresh, audit });
+      setNeedsRecoverySetup(false);
       setStatus('unlocked');
+      setRecoveryReveal(mnemonic);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not create the vault.');
     }
-  }, []);
+  }, [persist]);
 
-  const unlock = useCallback(async (passphrase: string) => {
-    setError(null);
-    try {
-      await requestPersistence();
-      const blob = await loadEncrypted();
+  const adoptUnlocked = useCallback(
+    async (blob: EncryptedVault | null, passphrase: string) => {
       if (!blob) {
         setStatus('empty');
         return;
       }
-      const decrypted = await decryptVault(blob, passphrase);
-      if (!decrypted.environments || decrypted.environments.length === 0) {
-        decrypted.environments = [...DEFAULT_ENVIRONMENTS];
+      if (isEnvelope(blob)) {
+        const { data: d, keys, envelope } = await openWithPassphrase(blob, passphrase);
+        dekKeyRef.current = keys.dekKey;
+        dekRawRef.current = keys.dekRaw;
+        envelopeRef.current = envelope;
+        const migrated =
+          !d.environments || d.environments.length === 0
+            ? { ...d, environments: [...DEFAULT_ENVIRONMENTS] }
+            : d;
+        const audit = await appendAudit(migrated.audit, 'vault.unlock');
+        await persist({ ...migrated, audit });
+        setNeedsRecoverySetup(!blob.recoveryWrap);
+        setStatus('unlocked');
+        return;
       }
-      keyRef.current = await keyFromKdf(passphrase, blob.kdf);
-      kdfRef.current = blob.kdf;
-      const audit = await appendAudit(decrypted.audit, 'vault.unlock');
-      await persist({ ...decrypted, audit });
+      // Legacy v1 vault: read it, then re-seal under the envelope format.
+      const legacy = await openLegacy(blob as never, passphrase);
+      const { keys, envelope } = await newEnvelope(passphrase);
+      dekKeyRef.current = keys.dekKey;
+      dekRawRef.current = keys.dekRaw;
+      envelopeRef.current = envelope;
+      const fixed =
+        !legacy.environments || legacy.environments.length === 0
+          ? { ...legacy, environments: [...DEFAULT_ENVIRONMENTS] }
+          : legacy;
+      const audit = await appendAudit(fixed.audit, 'vault.unlock', undefined, 'migrated to v2');
+      await persist({ ...fixed, audit });
+      setNeedsRecoverySetup(true);
       setStatus('unlocked');
-    } catch {
-      setError('Wrong passphrase, or the vault could not be read.');
+    },
+    [persist],
+  );
+
+  const unlock = useCallback(
+    async (passphrase: string) => {
+      setError(null);
+      try {
+        await requestPersistence();
+        await adoptUnlocked(await loadEncrypted(), passphrase);
+      } catch {
+        setError('Wrong passphrase, or the vault could not be read.');
+      }
+    },
+    [adoptUnlocked],
+  );
+
+  const recoverWithMnemonic = useCallback(async (mnemonic: string) => {
+    setError(null);
+    try {
+      await requestPersistence();
+      const blob = await loadEncrypted();
+      if (!blob || !isEnvelope(blob)) {
+        setError('This vault has no recovery phrase set.');
+        return;
+      }
+      const { data: d, keys, envelope } = await openWithRecovery(blob, mnemonic);
+      dekKeyRef.current = keys.dekKey;
+      dekRawRef.current = keys.dekRaw;
+      envelopeRef.current = envelope;
+      const audit = await appendAudit(d.audit, 'vault.unlock', undefined, 'via recovery phrase');
+      await persist({ ...d, audit });
+      setRecoveredViaKey(true);
+      setStatus('unlocked');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not recover with that phrase.');
     }
   }, [persist]);
 
+  const changePassphrase = useCallback(async (newPassphrase: string) => {
+    if (!dekRawRef.current || !envelopeRef.current) return;
+    const { kdf, passWrap } = await rewrapPassphrase(dekRawRef.current, newPassphrase);
+    envelopeRef.current = { ...envelopeRef.current, kdf, passWrap };
+    await mutate((d) => d, 'vault.passphrase');
+    setRecoveredViaKey(false);
+  }, [mutate]);
+
+  const generateRecoveryKey = useCallback(async () => {
+    if (!dekRawRef.current || !envelopeRef.current) return;
+    const { recoveryWrap, mnemonic } = await makeRecovery(dekRawRef.current);
+    envelopeRef.current = { ...envelopeRef.current, recoveryWrap };
+    await mutate((d) => d, 'vault.recovery');
+    setNeedsRecoverySetup(false);
+    setRecoveryReveal(mnemonic);
+  }, [mutate]);
+
+  const dismissRecoveryReveal = useCallback(() => setRecoveryReveal(null), []);
+
   const lock = useCallback(() => {
-    keyRef.current = null;
-    kdfRef.current = null;
+    dekKeyRef.current = null;
+    dekRawRef.current = null;
+    envelopeRef.current = null;
     setData(null);
+    setRecoveredViaKey(false);
     setStatus('locked');
   }, []);
 
@@ -180,10 +272,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const updateService = useCallback(
     (id: string, patch: Partial<Omit<VaultService, 'id'>>) =>
       mutate(
-        (d) => ({
-          ...d,
-          services: d.services.map((s) => (s.id === id ? { ...s, ...patch } : s)),
-        }),
+        (d) => ({ ...d, services: d.services.map((s) => (s.id === id ? { ...s, ...patch } : s)) }),
         'service.update',
         id,
       ),
@@ -192,11 +281,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
 
   const deleteService = useCallback(
     (id: string) =>
-      mutate(
-        (d) => ({ ...d, services: d.services.filter((s) => s.id !== id) }),
-        'service.delete',
-        id,
-      ),
+      mutate((d) => ({ ...d, services: d.services.filter((s) => s.id !== id) }), 'service.delete', id),
     [mutate],
   );
 
@@ -267,8 +352,7 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   const exportVault = useCallback(async () => {
     const blob = await loadEncrypted();
     if (!blob) return;
-    const json = JSON.stringify(blob, null, 2);
-    const file = new Blob([json], { type: 'application/json' });
+    const file = new Blob([JSON.stringify(blob, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(file);
     const a = document.createElement('a');
     a.href = url;
@@ -282,17 +366,12 @@ export function VaultProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const blob = JSON.parse(await file.text());
-      const decrypted = await decryptVault(blob, passphrase);
-      keyRef.current = await keyFromKdf(passphrase, blob.kdf);
-      kdfRef.current = blob.kdf;
       await saveEncrypted(blob);
-      const audit = await appendAudit(decrypted.audit, 'vault.import');
-      await persist({ ...decrypted, audit });
-      setStatus('unlocked');
+      await adoptUnlocked(blob, passphrase);
     } catch {
       setError('Could not import that file with this passphrase.');
     }
-  }, [persist]);
+  }, [adoptUnlocked]);
 
   const verifyAudit = useCallback(async () => {
     if (!data) return { ok: true };
@@ -310,8 +389,16 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       status,
       data,
       error,
+      hasRecovery: Boolean(envelopeRef.current?.recoveryWrap),
+      needsRecoverySetup,
+      recoveredViaKey,
+      recoveryReveal,
       createVault,
       unlock,
+      recoverWithMnemonic,
+      changePassphrase,
+      generateRecoveryKey,
+      dismissRecoveryReveal,
       lock,
       addService,
       updateService,
@@ -329,8 +416,15 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       status,
       data,
       error,
+      needsRecoverySetup,
+      recoveredViaKey,
+      recoveryReveal,
       createVault,
       unlock,
+      recoverWithMnemonic,
+      changePassphrase,
+      generateRecoveryKey,
+      dismissRecoveryReveal,
       lock,
       addService,
       updateService,

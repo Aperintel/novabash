@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from '@/components/Logo';
+import { InstallButton } from '@/components/InstallButton';
 
 const tabs: Array<{ href: string; label: string }> = [
   { href: '/stacks', label: 'Stacks' },
@@ -28,6 +29,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
         <div className="flex items-center justify-end gap-3">
+          <InstallButton />
           <a
             href="https://github.com/aperintel/novabash"
             className="text-[13px] text-fg-mid transition-colors duration-150 ease-nb hover:text-fg"

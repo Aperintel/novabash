@@ -8,8 +8,13 @@ to trust it with.
 ## How your data is protected
 
 - The vault is encrypted with AES-256-GCM using the Web Crypto API.
-- The encryption key is derived from your passphrase with a slow key-derivation
-  function. The passphrase is never stored and never transmitted.
+- A random data key encrypts the vault. That data key is wrapped twice: once by a
+  key derived from your passphrase (PBKDF2), and once by a key derived from a
+  24-word recovery phrase. Either one unlocks the vault, which is how recovery and
+  passphrase changes work with no server. The passphrase and the recovery phrase
+  are never stored and never transmitted.
+- If you forget your passphrase, the recovery phrase is the only way back in. Lose
+  both and the vault cannot be recovered by anyone, including us.
 - The encrypted vault is held in your browser's IndexedDB, and any export is a
   single encrypted file. Without the passphrase, a copied vault or export file is
   useless.

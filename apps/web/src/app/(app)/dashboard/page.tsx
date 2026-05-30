@@ -45,6 +45,11 @@ export default function DashboardPage() {
     addEnvironment,
     removeEnvironment,
     verifyAudit,
+    changePassphrase,
+    generateRecoveryKey,
+    recoveredViaKey,
+    needsRecoverySetup,
+    hasRecovery,
   } = useVault();
   const [newName, setNewName] = useState('');
   const [newFields, setNewFields] = useState('');
@@ -53,6 +58,8 @@ export default function DashboardPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [audit, setAudit] = useState<{ ok: boolean; brokenAt?: number } | null>(null);
+  const [pNew, setPNew] = useState('');
+  const [pConfirm, setPConfirm] = useState('');
 
   if (!data) return null;
 
@@ -78,6 +85,26 @@ export default function DashboardPage() {
           <button type="button" className={btnPrimary} onClick={() => exportVault()}>
             Export vault
           </button>
+        </div>
+      ) : null}
+
+      {needsRecoverySetup ? (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border border-rose/50 bg-rose/5 px-4 py-3">
+          <p className="text-[13px] text-fg-mid">
+            No recovery phrase is set for this vault. Without one, a forgotten
+            passphrase means the vault is gone for good. Generate one and store it
+            safely.
+          </p>
+          <button type="button" className={btnPrimary} onClick={() => generateRecoveryKey()}>
+            Generate recovery phrase
+          </button>
+        </div>
+      ) : null}
+
+      {recoveredViaKey ? (
+        <div className="mb-6 border border-gold/40 bg-gold/5 px-4 py-3 text-[13px] text-fg-mid">
+          You unlocked with your recovery phrase. Set a new passphrase in the Security
+          section below so you can use it next time.
         </div>
       ) : null}
 
@@ -317,6 +344,62 @@ export default function DashboardPage() {
               </li>
             ))}
         </ul>
+      </section>
+
+      <section className={`${panel} mt-6`}>
+        <h2 className={heading}>Security</h2>
+        <div className="mt-4 grid gap-8 md:grid-cols-2">
+          <div>
+            <h3 className="text-[13px] font-semibold text-fg">Change passphrase</h3>
+            <div className="mt-2 grid gap-2">
+              <input
+                type="password"
+                value={pNew}
+                onChange={(e) => setPNew(e.target.value)}
+                placeholder="New passphrase"
+                className={input}
+              />
+              <input
+                type="password"
+                value={pConfirm}
+                onChange={(e) => setPConfirm(e.target.value)}
+                placeholder="Confirm new passphrase"
+                className={input}
+              />
+              <div>
+                <button
+                  type="button"
+                  disabled={pNew.length < 8 || pNew !== pConfirm}
+                  className={`${btnPrimary} disabled:opacity-40`}
+                  onClick={async () => {
+                    await changePassphrase(pNew);
+                    setPNew('');
+                    setPConfirm('');
+                  }}
+                >
+                  Update passphrase
+                </button>
+              </div>
+              {pNew.length > 0 && pNew.length < 8 ? (
+                <p className="text-[11px] text-fg-dim">At least 8 characters.</p>
+              ) : null}
+              {pConfirm.length > 0 && pNew !== pConfirm ? (
+                <p className="text-[11px] text-rose">Passphrases do not match.</p>
+              ) : null}
+            </div>
+          </div>
+          <div>
+            <h3 className="text-[13px] font-semibold text-fg">Recovery phrase</h3>
+            <p className="mt-2 text-[12px] leading-relaxed text-fg-dim">
+              {hasRecovery
+                ? 'A recovery phrase is set. Regenerating shows a fresh 24-word phrase and retires the old one immediately.'
+                : 'No recovery phrase is set yet. Generate one so a forgotten passphrase is recoverable.'}
+            </p>
+            <button type="button" className={`${btn} mt-3`} onClick={() => generateRecoveryKey()}>
+              {hasRecovery ? 'Regenerate recovery phrase' : 'Generate recovery phrase'}
+            </button>
+          </div>
+        </div>
       </section>
     </div>
   );

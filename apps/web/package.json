@@ -13,6 +13,7 @@
     "@fontsource-variable/onest": "5.1.0",
     "@fontsource/jetbrains-mono": "5.1.1",
     "@novabash/brand": "workspace:*",
+    "@scure/bip39": "^2.2.0",
     "next": "14.2.18",
     "react": "18.3.1",
     "react-dom": "18.3.1"

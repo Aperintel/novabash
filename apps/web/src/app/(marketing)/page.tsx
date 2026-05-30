@@ -14,18 +14,20 @@ export default function HomePage() {
 
 function Hero() {
   return (
-    <section className="grid items-center gap-12 py-20 lg:grid-cols-2">
+    <section className="grid items-start gap-12 py-20 lg:grid-cols-2">
       <div>
         <span className="inline-block border border-hairline-bright px-2.5 py-1 font-mono text-[11px] uppercase tracking-caps text-fg-dim">
-          Local-first, v0.2
+          Local-first · v0.2 · no account, no server
         </span>
         <h1 className="mt-5 text-[44px] font-extrabold leading-[1.05] tracking-heading text-fg">
-          A vault for your API keys that never leaves your machine.
+          An encrypted .env vault that never leaves your laptop.
         </h1>
         <p className="mt-5 max-w-xl text-[16px] leading-relaxed text-fg-mid">
-          NovaBash keeps the credentials your projects run on in an encrypted vault
-          in your own browser. No account, no server, no subscription. Add your
-          keys, apply a stack bundle, and generate a single .env on demand.
+          Most secret managers want an account, a server, and a monthly invoice to
+          hold keys you already have on your own machine. NovaBash skips all of
+          that. Your vault is encrypted in the browser, you paste your keys in, and
+          you pull a .env when you need one. Nothing syncs, because there is nowhere
+          for it to sync to.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
           <Link
@@ -38,11 +40,12 @@ function Hero() {
             href="/stacks"
             className="border border-hairline-bright px-5 py-2.5 text-[14px] text-fg-mid transition-colors hover:border-gold hover:text-gold"
           >
-            Browse stack bundles
+            Browse the bundles
           </Link>
         </div>
         <p className="mt-4 font-mono text-[11px] text-fg-dim">
-          Encrypted with AES-256-GCM in your browser. Nothing is uploaded.
+          AES-256-GCM in your browser. There is no server to breach, because there
+          is no server.
         </p>
       </div>
       <TerminalHero />
@@ -54,23 +57,23 @@ function HowItWorks() {
   const steps = [
     {
       n: '01',
-      title: 'Set a passphrase',
-      body: 'It derives the encryption key for your vault. It is never stored and never sent anywhere.',
+      title: 'Pick a passphrase',
+      body: 'It derives the key that encrypts the vault. We never see it, and there is no reset link, because there is no us to email one. You also get a 24-word recovery phrase as a backup way in, so a forgotten passphrase is not the end of the road. Keep both somewhere you trust.',
     },
     {
       n: '02',
-      title: 'Add your keys',
-      body: 'Add services by hand or apply a curated stack bundle, then fill in the values. Everything stays on your device.',
+      title: 'Paste your keys',
+      body: 'Add services by hand, or apply a stack bundle and fill in the blanks. Supabase, Stripe, OpenRouter, whatever your project drags along. It all stays on the device.',
     },
     {
       n: '03',
-      title: 'Generate a .env',
-      body: 'Download a single .env for the project you are working on. Export an encrypted backup whenever you want.',
+      title: 'Pull a .env',
+      body: 'Generate a .env for the environment you are working in and get back to it. Export an encrypted backup so a wiped browser is an annoyance, not a catastrophe.',
     },
   ];
   return (
     <section className="border-t border-hairline py-20">
-      <h2 className="text-[28px] font-extrabold tracking-heading text-fg">How it works</h2>
+      <h2 className="text-[28px] font-extrabold tracking-heading text-fg">Three steps, then you forget it exists</h2>
       <div className="mt-10 grid gap-5 md:grid-cols-3">
         {steps.map((s) => (
           <div key={s.n} className="border border-hairline bg-bg-elev-1 p-6">
@@ -89,23 +92,23 @@ function WhyLocalFirst() {
     <section className="border-t border-hairline py-20">
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
-          <h2 className="text-[28px] font-extrabold tracking-heading text-fg">Why local-first</h2>
+          <h2 className="text-[28px] font-extrabold tracking-heading text-fg">Why keep it local</h2>
           <p className="mt-5 text-[15px] leading-relaxed text-fg-mid">
-            A solo developer or a small team does not need a third party holding
-            their secrets. Keeping the vault on your own device removes the
-            account, the monthly bill, and the question of who else can read your
-            keys. You manage your own encrypted backup, and that is the whole
-            arrangement.
+            A solo dev or a small team does not need a third party babysitting their
+            keys. Keeping the vault on your own machine kills the account, the bill,
+            and the awkward question of who else can read your secrets. The catch is
+            honest, so here it is: you own your backups. Export the encrypted file,
+            keep it somewhere safe, and you can walk it to any machine.
           </p>
         </div>
         <div className="border border-hairline bg-bg-elev-1 p-6">
-          <h3 className="font-mono text-[11px] uppercase tracking-caps text-fg-dim">In the box</h3>
+          <h3 className="font-mono text-[11px] uppercase tracking-caps text-fg-dim">What you actually get</h3>
           <ul className="mt-4 grid gap-3 text-[14px] text-fg-mid">
-            <li>Encrypted vault in your browser, AES-256-GCM under your passphrase.</li>
-            <li>Curated stack bundles to start from.</li>
-            <li>One .env generated locally on demand.</li>
-            <li>A tamper-evident, hash-chained audit log of every change.</li>
-            <li>Encrypted export and import to back up or move devices.</li>
+            <li>An encrypted vault in the browser, AES-256-GCM under your passphrase.</li>
+            <li>Stack bundles, so you are not staring at a blank .env.</li>
+            <li>A separate .env per environment, generated on demand.</li>
+            <li>A hash-chained audit log, so you can prove your own history was not quietly edited.</li>
+            <li>Encrypted export and import, for backups and new machines.</li>
           </ul>
         </div>
       </div>
@@ -116,9 +119,10 @@ function WhyLocalFirst() {
 function ClosingCta() {
   return (
     <section className="border-t border-hairline py-20 text-center">
-      <h2 className="text-[28px] font-extrabold tracking-heading text-fg">Open the vault</h2>
+      <h2 className="text-[28px] font-extrabold tracking-heading text-fg">Open it and have a poke around</h2>
       <p className="mx-auto mt-4 max-w-lg text-[15px] leading-relaxed text-fg-mid">
-        It runs entirely in your browser. Set a passphrase and you are in.
+        It runs entirely in the browser. Pick a passphrase and you are in. No
+        signup, no card, no welcome email three minutes later.
       </p>
       <div className="mt-7">
         <Link

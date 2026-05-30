@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
 import { Onest, JetBrains_Mono } from 'next/font/google';
 import { VaultProvider } from '@/lib/vault';
+import { CookieNotice } from '@/components/CookieNotice';
+import { Pwa } from '@/components/Pwa';
 import './globals.css';
+
+export const viewport = {
+  themeColor: '#0a0a0a',
+};
 
 const DESCRIPTION =
   'A local-first vault for the API keys your projects run on. Encrypted in your browser, never sent to a server.';
@@ -28,6 +34,7 @@ export const metadata: Metadata = {
   },
   description: DESCRIPTION,
   applicationName: 'NovaBash',
+  manifest: '/manifest.webmanifest',
   authors: [{ name: 'Aperintel' }],
   keywords: ['local-first', 'secrets vault', 'env management', 'BYOK', 'developer tools'],
   openGraph: {
@@ -53,6 +60,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-GB" className={`${onest.variable} ${mono.variable}`}>
       <body>
         <VaultProvider>{children}</VaultProvider>
+        <Pwa />
+        <CookieNotice />
       </body>
     </html>
   );
