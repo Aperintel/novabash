@@ -1,0 +1,49 @@
+name: Supabase keepalive
+
+# Free-tier Supabase projects pause after about 7 days with no activity. This
+# workflow makes a small authenticated query every 3 days to keep the project
+# (and its database) awake. It also runs on demand via the Actions tab.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   SUPABASE_URL        the project URL, e.g. https://xxxxxxxx.supabase.co
+#   SUPABASE_ANON_KEY   the project anon (public) key
+#
+# Optional repository variable:
+#   KEEPALIVE_TABLE     table to query (default: bundles_published)
+
+on:
+  schedule:
+    - cron: "17 4 */3 * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query Supabase to keep the project active
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          KEEPALIVE_TABLE: ${{ vars.KEEPALIVE_TABLE }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Missing SUPABASE_URL or SUPABASE_ANON_KEY secret. Add them in repo settings."
+            exit 1
+          fi
+          table="${KEEPALIVE_TABLE:-bundles_published}"
+          url="${SUPABASE_URL%/}/rest/v1/${table}?select=id&limit=1"
+          code=$(curl -s -o /tmp/resp -w "%{http_code}" "$url" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          echo "HTTP $code"
+          head -c 300 /tmp/resp; echo
+          # Any 2xx to 4xx response means the project is awake and served the
+          # request (a row-level-security denial still proves activity, which is
+          # all that is needed to prevent pausing). A 5xx or no response means
+          # the project may be paused or unreachable.
+          if [ "$code" -ge 200 ] && [ "$code" -lt 500 ]; then
+            echo "Supabase project is awake."
+          else
+            echo "Unexpected status $code; the project may be paused or unreachable."
+            exit 1
+          fi
