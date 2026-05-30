@@ -3,8 +3,7 @@ import { Logo } from '@/components/Logo';
 
 const tabs: Array<{ href: string; label: string }> = [
   { href: '/stacks', label: 'Stacks' },
-  { href: '/pricing', label: 'Pricing' },
-  { href: '/community', label: 'Community' },
+  { href: '/security', label: 'Security' },
 ];
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
@@ -29,17 +28,18 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
         <div className="flex items-center justify-end gap-3">
-          <Link
-            href="/sign-in"
+          <a
+            href="https://github.com/aperintel/novabash"
             className="text-[13px] text-fg-mid transition-colors duration-150 ease-nb hover:text-fg"
+            rel="noopener noreferrer"
           >
-            Sign in
-          </Link>
+            GitHub
+          </a>
           <Link
-            href="/sign-up"
+            href="/dashboard"
             className="bg-gold px-4 py-1.5 text-[13px] font-semibold text-bg transition-colors duration-150 ease-nb hover:bg-gold-bright"
           >
-            Start free
+            Open the app
           </Link>
         </div>
       </header>
@@ -71,7 +71,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             Changelog
           </Link>
           <a
-            href="https://github.com/novabash/novabash"
+            href="https://github.com/aperintel/novabash"
             className="hover:text-fg"
             rel="noopener noreferrer"
           >

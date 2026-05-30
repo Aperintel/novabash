@@ -2,87 +2,103 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 
-BYOK developer infrastructure platform. One workspace, one encrypted vault, one `.env`, every third-party service your stack runs on. Phase A complete; tagged at [`v0.1.0-phase-a`](https://github.com/aperintel/novabash/releases/tag/v0.1.0-phase-a).
+A local-first vault for the API keys and service credentials your projects run
+on. Your keys are encrypted in your browser and never leave your machine. There
+is no account to create and no server holding your secrets.
 
-NovaBash sits between a development team and the long tail of services they sign up for (Supabase, Vercel, Stripe, Resend, OpenRouter, Upstash, Cloudflare, and the rest). The workspace owns the keys; NovaBash provisions, rotates, and audits them; the team pulls a single `.env` and gets to work.
+> **v0.2, local-first.** NovaBash started as a hosted, multi-user platform. It is
+> being rebuilt as a local-first tool: no backend, no logins, no subscription. If
+> you are looking at the older hosted design, it has been retired. This README
+> describes the local-first product.
 
-## What it gives you
+## What it does
 
-- **One vault for every service the project consumes.** Envelope-encrypted with KMS-owned data keys. The platform never sees plaintext credentials.
-- **One `.env` to pull.** The CLI fetches the workspace's current credentials into a project-local `.env` you can commit to `.gitignore` but never to source control.
-- **Curated stack bundles.** Six first-party bundles (Launchpad, Builder AI, Edge Stack, Data Stack, Mobile First, Enterprise Ready) plus a community catalogue, each a vetted combination of services that ship together.
-- **Audit log over every key event.** Every provision, rotation, and pull writes to a tamper-evident append-only log, so the team can answer "when did this credential last change" without grepping their inbox.
-- **Native rotation flow.** `novabash rotate <service>` rotates the key at the vendor, updates the vault, writes the audit entry, and notifies any tooling that uses the key. The team rotates without redeploying.
+- **An encrypted vault that stays on your device.** Keys are encrypted in the
+  browser with AES-256-GCM, under a key derived from a passphrase you choose. The
+  encrypted vault lives in your browser's local storage. NovaBash has no server
+  and never sees your secrets.
+- **One `.env`, generated locally.** Pick the services a project needs and
+  download a single `.env`. Nothing is uploaded.
+- **Curated stack bundles.** Common combinations of services (a starter stack, an
+  edge stack, a data stack, and more) ship as ready-made templates you can apply
+  and fill in.
+- **A tamper-evident audit trail, kept locally.** Every change to the vault is
+  recorded in a hash-chained log inside the vault itself, so you can verify that
+  your own history has not been altered. No telemetry, no phone-home.
+- **Encrypted backup and transfer.** Export the vault as a single encrypted file
+  to back it up or move it to another machine, then import it there.
 
-## Layout
+## Why local-first
 
-```
-apps/
-  web/                 Next.js 14 app router. Marketing site, sign-in,
-                       dashboard, community catalogue, and the API routes
-                       that back the vault and the rotation flow.
-packages/
-  cli/                 @novabash/cli. CLI for init, login, pull, status, rotate.
-  sdk-node/            @novabash/sdk-node. Programmatic access for Node apps.
-  adapters/            One module per third-party service. provision, deprovision,
-                       rotate, status.
-  db/                  Drizzle schema and migrations.
-  ui/                  Shared design primitives consumed by apps/web.
-  brand/               Logo, icon set, design tokens.
-  gh-action/           GitHub Action that pulls the workspace .env at CI time.
-  vscode-ext/          Visual Studio Code extension for in-editor pull / status.
-```
-
-The platform deploys as a single Vercel project; there is no separate API host. Phase A consolidated the formerly-separate Fastify API into the Next.js app routes under `apps/web`.
+A small team or a solo developer does not need a third party to hold their API
+keys. Keeping the vault on your own device removes the account, the monthly bill,
+and the question of who else can read your secrets. The trade is that you manage
+your own backups (the encrypted export file) rather than relying on a server.
 
 ## Quick start
 
-```bash
-# install the CLI globally
-npm install -g @novabash/cli
+NovaBash runs entirely in your browser.
 
-# create a workspace (one-time)
-novabash init
+1. Open the app (the live build is on Cloudflare Pages; the URL is in the repo
+   description).
+2. Set a vault passphrase. This derives the encryption key. It is never stored
+   and never sent anywhere, so keep it safe; without it the vault cannot be
+   decrypted.
+3. Add your services and their keys, or apply a stack bundle and fill in the
+   values.
+4. Click generate to download a `.env` for the project you are working on.
+5. Export the encrypted vault file whenever you want a backup.
 
-# log in to the workspace
-novabash login
-
-# pull the current credentials into ./.env
-novabash pull
-
-# check live state
-novabash status
-
-# rotate one credential
-novabash rotate supabase
-```
-
-The workspace homepage and bundle catalogue live at [novabash.dev](https://novabash.dev).
-
-## Development
+To run it yourself:
 
 ```bash
 git clone https://github.com/aperintel/novabash.git
 cd novabash
 pnpm install
-pnpm dev
+pnpm dev      # local dev server
+pnpm build    # static build, output ready for any static host
 ```
 
-Before pushing:
+## How the encryption works
 
-```bash
-pnpm lint
-pnpm typecheck
-pnpm test
-```
+- The vault is encrypted with AES-256-GCM using the Web Crypto API.
+- The encryption key is derived from your passphrase with a slow key-derivation
+  function, so the passphrase is never stored and a stolen vault file is useless
+  without it.
+- The encrypted blob is held in your browser's IndexedDB and, on export, written
+  to a single encrypted file.
 
-The build plan, deploy runbook, and Phase B roadmap live in private planning files outside the repo. The public-facing roadmap is the [open issues](https://github.com/aperintel/novabash/issues) on this repo.
+## Security
+
+Read [SECURITY.md](SECURITY.md) before you trust NovaBash with real keys. The
+short version: a browser-based vault is a convenience tool with a real threat
+model. The main risk is cross-site scripting, which on any client-side vault can
+expose decrypted secrets while the vault is unlocked. NovaBash mitigates this
+with a strict Content-Security-Policy, no third-party scripts, no analytics, and
+encryption at rest, but it is not a substitute for a hardware-backed secrets
+manager in a high-security setting. For the strongest posture, use the local
+command-line mode (on the roadmap), which keeps the vault off the browser
+entirely.
+
+## Stack bundles
+
+Bundles are static templates, a named set of services that commonly ship
+together, with the environment variables each one needs. Apply a bundle, fill in
+your own values, and generate the `.env`. You can also import a bundle file
+someone has shared.
+
+## Roadmap
+
+- A command-line mode that operates on a local encrypted vault file, for users
+  who would rather not keep secrets in a browser at all.
+- More first-party bundles.
+- Optional rotation helpers that call a vendor's own rotation API directly from
+  your machine using your own credentials.
 
 ## Contributing
 
-Bug reports, feature requests, and adapter PRs all welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for the shape of a clean PR, the adapter interface, and the cryptographic-change review process. Security disclosure policy is in [SECURITY.md](SECURITY.md).
-
-NovaBash is maintained by [Aperintel](https://github.com/aperintel). It is one of several products under the Aperintel umbrella, alongside the [Nexuscone](https://github.com/aperintel/nexuscone) audit substrate and other governance-first AI infrastructure.
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+NovaBash is maintained by [Aperintel](https://github.com/aperintel).
 
 ## Licence
 

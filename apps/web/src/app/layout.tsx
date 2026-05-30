@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Onest, JetBrains_Mono } from 'next/font/google';
+import { VaultProvider } from '@/lib/vault';
 import './globals.css';
+
+const DESCRIPTION =
+  'A local-first vault for the API keys your projects run on. Encrypted in your browser, never sent to a server.';
 
 const onest = Onest({
   subsets: ['latin'],
@@ -22,15 +26,13 @@ export const metadata: Metadata = {
     default: 'NovaBash',
     template: '%s · NovaBash',
   },
-  description:
-    'One workspace, one encrypted vault, one .env file. NovaBash provisions and watches the services your stack actually runs on.',
+  description: DESCRIPTION,
   applicationName: 'NovaBash',
   authors: [{ name: 'Aperintel' }],
-  keywords: ['developer infrastructure', 'env management', 'BYOK', 'stack bundles'],
+  keywords: ['local-first', 'secrets vault', 'env management', 'BYOK', 'developer tools'],
   openGraph: {
     title: 'NovaBash',
-    description:
-      'One workspace, one encrypted vault, one .env file. NovaBash provisions and watches the services your stack actually runs on.',
+    description: DESCRIPTION,
     url: 'https://novabash.dev',
     siteName: 'NovaBash',
     locale: 'en_GB',
@@ -39,8 +41,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'NovaBash',
-    description:
-      'One workspace, one encrypted vault, one .env file. NovaBash provisions and watches the services your stack actually runs on.',
+    description: DESCRIPTION,
   },
   icons: {
     icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }],
@@ -50,7 +51,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-GB" className={`${onest.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <VaultProvider>{children}</VaultProvider>
+      </body>
     </html>
   );
 }
