@@ -19,6 +19,9 @@ is no account to create and no server holding your secrets.
   and never sees your secrets.
 - **One `.env`, generated locally.** Pick the services a project needs and
   download a single `.env`. Nothing is uploaded.
+- **Multiple environments.** Keep separate values per environment (development,
+  staging, and production by default, plus any you add) and generate the right
+  `.env` for each.
 - **Curated stack bundles.** Common combinations of services (a starter stack, an
   edge stack, a data stack, and more) ship as ready-made templates you can apply
   and fill in.
