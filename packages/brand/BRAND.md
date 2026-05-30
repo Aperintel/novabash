@@ -177,8 +177,7 @@ emails, CLI output). This is a hard rule.
 
 ## Voice (for any user-facing copy that ships under the NovaBash brand)
 
-NovaBash inherits the global Julius/Osi voice rules from
-`C:/Users/juliu/.claude/CLAUDE.md`. Concretely for product copy:
+NovaBash product copy follows these voice rules. Concretely:
 
 - No em-dashes, no en-dashes used as breaks, no double-hyphens.
 - No banned vocabulary list (delve, leverage, harness, robust, seamless,
