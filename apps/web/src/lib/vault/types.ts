@@ -3,7 +3,8 @@
 
 export interface VaultField {
   key: string;
-  value: string;
+  // One value per environment name (for example development, staging, production).
+  values: Record<string, string>;
 }
 
 export interface VaultService {
@@ -26,6 +27,8 @@ export type AuditAction =
   | 'service.rotate'
   | 'bundle.apply'
   | 'env.generate'
+  | 'env.add'
+  | 'env.remove'
   | 'vault.export'
   | 'vault.import';
 
@@ -40,6 +43,7 @@ export interface AuditEntry {
 
 export interface VaultData {
   schemaVersion: number;
+  environments: string[];
   services: VaultService[];
   audit: AuditEntry[];
   updatedAt: string;
@@ -60,12 +64,14 @@ export interface EncryptedVault {
   ciphertext: string; // base64, AES-GCM of the JSON-encoded VaultData
 }
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export const PBKDF2_ITERATIONS = 310_000;
+export const DEFAULT_ENVIRONMENTS = ['development', 'staging', 'production'];
 
 export function emptyVault(): VaultData {
   return {
     schemaVersion: SCHEMA_VERSION,
+    environments: [...DEFAULT_ENVIRONMENTS],
     services: [],
     audit: [],
     updatedAt: new Date().toISOString(),

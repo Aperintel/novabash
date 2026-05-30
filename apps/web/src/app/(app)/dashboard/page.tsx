@@ -5,7 +5,7 @@ import { Icon } from '@/components/Icon';
 import { bundles } from '@/lib/bundles';
 import { useVault, type VaultField } from '@/lib/vault';
 
-function parseFields(text: string): VaultField[] {
+function parseLines(text: string): { key: string; value: string }[] {
   return text
     .split('\n')
     .map((line) => line.trim())
@@ -16,8 +16,11 @@ function parseFields(text: string): VaultField[] {
     });
 }
 
-function fieldsToText(fields: VaultField[]): string {
-  return fields.map((f) => `${f.key}=${f.value}`).join('\n');
+function fieldsToText(fields: VaultField[], env: string): string {
+  return fields
+    .filter((f) => f.values[env] !== undefined)
+    .map((f) => `${f.key}=${f.values[env]}`)
+    .join('\n');
 }
 
 const panel = 'border border-hairline bg-bg-elev-1 p-5';
@@ -25,17 +28,37 @@ const heading = 'font-mono text-[11px] uppercase tracking-caps text-fg-dim';
 const btn =
   'border border-hairline-bright px-3 py-1.5 font-mono text-[11px] text-fg-mid transition-colors hover:border-gold hover:text-gold';
 const btnPrimary = 'bg-gold px-3 py-1.5 font-mono text-[11px] font-semibold text-bg hover:bg-gold-bright';
+const tab = 'border border-hairline-bright px-3 py-1.5 font-mono text-[11px] text-fg-mid hover:text-fg';
+const tabActive = 'border border-gold bg-gold/10 px-3 py-1.5 font-mono text-[11px] text-gold';
+const input =
+  'w-full border border-hairline-bright bg-bg-elev-2 px-3 py-2 font-mono text-[13px] text-fg outline-none focus:border-gold';
 
 export default function DashboardPage() {
-  const { data, addService, updateService, deleteService, applyBundle, exportEnv, exportVault, verifyAudit } =
-    useVault();
+  const {
+    data,
+    addService,
+    updateService,
+    deleteService,
+    applyBundle,
+    exportEnv,
+    exportVault,
+    addEnvironment,
+    removeEnvironment,
+    verifyAudit,
+  } = useVault();
   const [newName, setNewName] = useState('');
   const [newFields, setNewFields] = useState('');
+  const [newEnv, setNewEnv] = useState('');
+  const [selectedEnv, setSelectedEnv] = useState('');
   const [editId, setEditId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
   const [audit, setAudit] = useState<{ ok: boolean; brokenAt?: number } | null>(null);
 
   if (!data) return null;
+
+  const activeEnv = data.environments.includes(selectedEnv)
+    ? selectedEnv
+    : data.environments[0] ?? 'development';
 
   const lastExportIdx = data.audit.map((e) => e.action).lastIndexOf('vault.export');
   const mutationActions = ['service.add', 'service.update', 'service.delete', 'bundle.apply'];
@@ -57,6 +80,7 @@ export default function DashboardPage() {
           </button>
         </div>
       ) : null}
+
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-[24px] font-extrabold tracking-heading text-fg">Your vault</h1>
@@ -65,8 +89,8 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={btnPrimary} onClick={() => exportEnv()}>
-            Generate .env
+          <button type="button" className={btnPrimary} onClick={() => exportEnv(activeEnv)}>
+            Generate .env ({activeEnv})
           </button>
           <button type="button" className={btn} onClick={() => exportVault()}>
             Export vault
@@ -74,14 +98,52 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <section className="mb-6 flex flex-wrap items-center gap-2">
+        <span className={`${heading} mr-1`}>Environment</span>
+        {data.environments.map((env) => (
+          <button
+            key={env}
+            type="button"
+            className={env === activeEnv ? tabActive : tab}
+            onClick={() => setSelectedEnv(env)}
+          >
+            {env}
+          </button>
+        ))}
+        {data.environments.length > 1 ? (
+          <button type="button" className={btn} onClick={() => removeEnvironment(activeEnv)}>
+            Remove {activeEnv}
+          </button>
+        ) : null}
+        <span className="flex items-center gap-1">
+          <input
+            value={newEnv}
+            onChange={(e) => setNewEnv(e.target.value)}
+            placeholder="new environment"
+            className="w-32 border border-hairline-bright bg-bg-elev-2 px-2 py-1.5 font-mono text-[12px] text-fg outline-none focus:border-gold"
+          />
+          <button
+            type="button"
+            disabled={newEnv.trim().length === 0}
+            className={`${btn} disabled:opacity-40`}
+            onClick={async () => {
+              await addEnvironment(newEnv.trim().toLowerCase().replace(/\s+/g, '-'));
+              setNewEnv('');
+            }}
+          >
+            Add
+          </button>
+        </span>
+      </section>
+
       <section className={`${panel} mb-6`}>
-        <h2 className={heading}>Add a service</h2>
+        <h2 className={heading}>Add a service to {activeEnv}</h2>
         <div className="mt-3 grid gap-2">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Service name (e.g. Stripe)"
-            className="w-full border border-hairline-bright bg-bg-elev-2 px-3 py-2 font-mono text-[13px] text-fg outline-none focus:border-gold"
+            className={input}
           />
           <textarea
             value={newFields}
@@ -96,7 +158,10 @@ export default function DashboardPage() {
               disabled={newName.trim().length === 0}
               className={`${btnPrimary} disabled:opacity-40`}
               onClick={async () => {
-                await addService(newName.trim(), parseFields(newFields));
+                await addService(
+                  newName.trim(),
+                  parseLines(newFields).map((l) => ({ key: l.key, values: { [activeEnv]: l.value } })),
+                );
                 setNewName('');
                 setNewFields('');
               }}
@@ -151,10 +216,10 @@ export default function DashboardPage() {
                     className={btn}
                     onClick={() => {
                       setEditId(editId === s.id ? null : s.id);
-                      setEditText(fieldsToText(s.fields));
+                      setEditText(fieldsToText(s.fields, activeEnv));
                     }}
                   >
-                    {editId === s.id ? 'Close' : 'Edit'}
+                    {editId === s.id ? 'Close' : `Edit ${activeEnv}`}
                   </button>
                   <button type="button" className={btn} onClick={() => deleteService(s.id)}>
                     Delete
@@ -164,6 +229,9 @@ export default function DashboardPage() {
 
               {editId === s.id ? (
                 <div className="mt-3 grid gap-2">
+                  <p className="font-mono text-[10px] uppercase tracking-caps text-fg-fade">
+                    Editing values for {activeEnv}
+                  </p>
                   <textarea
                     value={editText}
                     onChange={(e) => setEditText(e.target.value)}
@@ -175,23 +243,47 @@ export default function DashboardPage() {
                       type="button"
                       className={btnPrimary}
                       onClick={async () => {
-                        await updateService(s.id, {
-                          fields: parseFields(editText),
-                          rotatedAt: new Date().toISOString(),
-                        });
+                        const keep = new Map(parseLines(editText).map((l) => [l.key, l.value] as const));
+                        const updated: VaultField[] = s.fields
+                          .map((f) => {
+                            const values: Record<string, string> = { ...f.values };
+                            const next = keep.get(f.key);
+                            if (next !== undefined) {
+                              values[activeEnv] = next;
+                              keep.delete(f.key);
+                            } else {
+                              delete values[activeEnv];
+                            }
+                            return { key: f.key, values };
+                          })
+                          .filter((f) => Object.keys(f.values).length > 0);
+                        keep.forEach((value, key) => updated.push({ key, values: { [activeEnv]: value } }));
+                        await updateService(s.id, { fields: updated, rotatedAt: new Date().toISOString() });
                         setEditId(null);
                       }}
                     >
-                      Save
+                      Save {activeEnv}
                     </button>
                   </div>
                 </div>
               ) : (
                 <ul className="mt-3 grid gap-1">
                   {s.fields.map((f) => (
-                    <li key={f.key} className="flex justify-between font-mono text-[12px]">
+                    <li key={f.key} className="flex items-center justify-between font-mono text-[12px]">
                       <span className="text-fg-mid">{f.key}</span>
-                      <span className="text-fg-dim">{f.value ? '••••••••' : 'empty'}</span>
+                      <span className="flex gap-1.5">
+                        {data.environments.map((env) => (
+                          <span
+                            key={env}
+                            title={f.values[env] !== undefined ? `${env}: set` : `${env}: empty`}
+                            className={`text-[10px] uppercase ${
+                              f.values[env] !== undefined ? 'text-mint' : 'text-fg-fade'
+                            }`}
+                          >
+                            {env.slice(0, 3)}
+                          </span>
+                        ))}
+                      </span>
                     </li>
                   ))}
                 </ul>

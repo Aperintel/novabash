@@ -23,7 +23,9 @@ scripting. If malicious script runs in the page while your vault is unlocked, it
 can read decrypted secrets, the same as any client-side secrets tool. NovaBash
 reduces this risk but cannot remove it:
 
-- A strict Content-Security-Policy that blocks inline and third-party script.
+- A Content-Security-Policy that confines scripts, styles, fonts, and network
+  calls to the app's own origin and blocks third-party code, plugins, and
+  framing (shipped as the Cloudflare Pages `_headers` file).
 - No analytics, no external trackers, no remote fonts or scripts.
 - Subresource integrity on anything served from outside the app.
 - The vault stays locked until you enter the passphrase, and the derived key is

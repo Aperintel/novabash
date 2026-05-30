@@ -25,6 +25,7 @@ import { appendAudit, verifyChain, withTouch, type ChainResult } from './audit';
 import { clearVault, hasVault, loadEncrypted, saveEncrypted } from './store';
 import { downloadEnv, generateEnv } from './env';
 import {
+  DEFAULT_ENVIRONMENTS,
   emptyVault,
   type AuditAction,
   type KdfParams,
@@ -52,7 +53,9 @@ interface VaultContextValue {
   updateService: (id: string, patch: Partial<Omit<VaultService, 'id'>>) => Promise<void>;
   deleteService: (id: string) => Promise<void>;
   applyBundle: (bundle: BundleLike) => Promise<void>;
-  exportEnv: (selectedIds?: string[]) => Promise<void>;
+  exportEnv: (environment: string, selectedIds?: string[]) => Promise<void>;
+  addEnvironment: (name: string) => Promise<void>;
+  removeEnvironment: (name: string) => Promise<void>;
   exportVault: () => Promise<void>;
   importVault: (file: File, passphrase: string) => Promise<void>;
   verifyAudit: () => Promise<ChainResult>;
@@ -138,6 +141,9 @@ export function VaultProvider({ children }: { children: ReactNode }) {
         return;
       }
       const decrypted = await decryptVault(blob, passphrase);
+      if (!decrypted.environments || decrypted.environments.length === 0) {
+        decrypted.environments = [...DEFAULT_ENVIRONMENTS];
+      }
       keyRef.current = await keyFromKdf(passphrase, blob.kdf);
       kdfRef.current = blob.kdf;
       const audit = await appendAudit(decrypted.audit, 'vault.unlock');
@@ -217,12 +223,45 @@ export function VaultProvider({ children }: { children: ReactNode }) {
   );
 
   const exportEnv = useCallback(
-    async (selectedIds?: string[]) => {
+    async (environment: string, selectedIds?: string[]) => {
       if (!data) return;
-      downloadEnv(generateEnv(data.services, selectedIds));
-      await mutate((d) => d, 'env.generate', undefined, `${selectedIds?.length ?? data.services.length} services`);
+      downloadEnv(generateEnv(data.services, environment, selectedIds), `.env.${environment}`);
+      await mutate((d) => d, 'env.generate', environment);
     },
     [data, mutate],
+  );
+
+  const addEnvironment = useCallback(
+    (name: string) =>
+      mutate(
+        (d) => (d.environments.includes(name) ? d : { ...d, environments: [...d.environments, name] }),
+        'env.add',
+        name,
+      ),
+    [mutate],
+  );
+
+  const removeEnvironment = useCallback(
+    (name: string) =>
+      mutate(
+        (d) => ({
+          ...d,
+          environments: d.environments.filter((e) => e !== name),
+          services: d.services.map((s) => ({
+            ...s,
+            fields: s.fields.map((f) => {
+              const rest: Record<string, string> = {};
+              for (const [k, v] of Object.entries(f.values)) {
+                if (k !== name) rest[k] = v;
+              }
+              return { ...f, values: rest };
+            }),
+          })),
+        }),
+        'env.remove',
+        name,
+      ),
+    [mutate],
   );
 
   const exportVault = useCallback(async () => {
@@ -279,6 +318,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       deleteService,
       applyBundle,
       exportEnv,
+      addEnvironment,
+      removeEnvironment,
       exportVault,
       importVault,
       verifyAudit,
@@ -296,6 +337,8 @@ export function VaultProvider({ children }: { children: ReactNode }) {
       deleteService,
       applyBundle,
       exportEnv,
+      addEnvironment,
+      removeEnvironment,
       exportVault,
       importVault,
       verifyAudit,
